@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Upload & Evaluate Resume - AI ATS Intelligence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Evaluate Candidate Resume</h1>
+    <p class="page-subtitle">Upload a PDF resume to execute the full 12-stage AI parsing, multi-model matching, and analysis pipeline.</p>
+  </div>
+</div>
+
+<div class="glass-panel" style="max-width: 760px; margin: 0 auto; padding: 2.5rem;">
+  <form method="POST" enctype="multipart/form-data" id="uploadForm" onsubmit="showProcessingState()">
+    {% csrf_token %}
+
+    <!-- Select Target Position -->
+    <div style="margin-bottom: 1.5rem;">
+      <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+        Target Position *
+      </label>
+      <select name="job_id" class="form-control" required style="cursor: pointer;">
+        {% for job in jobs %}
+          <option value="{{ job.id }}" {% if selected_job and selected_job.id == job.id %}selected{% endif %}>
+            {{ job.title }} ({{ job.department }}) &mdash; Threshold: {{ job.threshold_score }}%
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Candidate Optional Info -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+      <div>
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+          Candidate Name (Optional)
+        </label>
+        <input type="text" name="candidate_name" class="form-control" placeholder="Extracted automatically if blank">
+      </div>
+      <div>
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+          Candidate Email (Optional)
+        </label>
+        <input type="email" name="candidate_email" class="form-control" placeholder="candidate@example.com">
+      </div>
+    </div>
+
+    <!-- Drag & Drop Upload Zone -->
+    <div style="margin-bottom: 2rem;">
+      <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+        Resume PDF Document *
+      </label>
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <i class="fa-solid fa-file-pdf" style="font-size: 3rem; color: var(--accent-primary); margin-bottom: 1rem;"></i>
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">
+          Drag & Drop resume PDF here, or <span style="color: var(--accent-primary); text-decoration: underline;">Browse Files</span>
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem;" id="fileNameDisplay">
+          Supports native PDF documents (.pdf). Text and layout will be parsed by pdfplumber.
+        </p>
+        <input type="file" name="resume_file" id="fileInput" accept=".pdf" required style="display: none;" onchange="handleFileSelect(this)">
+      </div>
+    </div>
+
+    <!-- Pipeline Stages Showcase -->
+    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 2rem;">
+      <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 0.75rem;">
+        Automated 12-Stage Evaluation Engine
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+        <div><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> 1. pdfplumber Text & Layout Extraction</div>
+        <div><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> 2. spaCy Custom NER (SKILL, DEGREE, EXP, DATE)</div>
+        <div><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> 3. Claude Structured JSON Extraction</div>
+        <div><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> 4. Normalization + Canonical Synonyms</div>
+        <div><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> 5. Multi-Model Scoring (TF-IDF + Skills + ML)</div>
+        <div><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> 6. Explainable AI with SHAP Attribution</div>
+        <div><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> 7. Role-Fit Radar Chart Comparison</div>
+        <div><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald);"></i> 8. Decision Gate & Threshold Routing</div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+      <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" id="submitBtn" style="padding: 0.75rem 2rem;">
+        <i class="fa-solid fa-bolt"></i> Run AI Match & Evaluation
+      </button>
+    </div>
+  </form>
+
+  <!-- Processing State Modal / Overlay -->
+  <div id="processingOverlay" style="display: none; text-align: center; padding: 2rem 0;">
+    <div style="display: inline-block; width: 60px; height: 60px; border: 4px solid rgba(99, 102, 241, 0.2); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem;"></div>
+    <h3 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem;">Evaluating Candidate Profile...</h3>
+    <p style="color: var(--text-secondary); font-size: 0.9rem;" id="processingStepText">Extracting layout geometry and running spaCy NER...</p>
+  </div>
+</div>
+
+<style>
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+function handleFileSelect(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    document.getElementById('fileNameDisplay').innerHTML = 
+      `<b style="color: var(--accent-emerald);"><i class="fa-solid fa-file-circle-check"></i> ${file.name}</b> (${(file.size / 1024).toFixed(1)} KB)`;
+  }
+}
+
+function showProcessingState() {
+  document.getElementById('uploadForm').style.display = 'none';
+  document.getElementById('processingOverlay').style.display = 'block';
+
+  const steps = [
+    "Extracting text & word coordinates with pdfplumber...",
+    "Running custom spaCy NER (SKILL, DEGREE, EXPERIENCE, DATE)...",
+    "Requesting structured JSON from Claude Anthropic API...",
+    "Executing 3-Tier normalization and canonical synonym matching...",
+    "Calculating Multi-Model Scores (TF-IDF, Skill Coverage, Random Forest)...",
+    "Running SHAP TreeExplainer for feature importance...",
+    "Benchmarking role-fit radar & recruiter 6-second scan simulation..."
+  ];
+
+  let stepIdx = 0;
+  setInterval(() => {
+    stepIdx = (stepIdx + 1) % steps.length;
+    document.getElementById('processingStepText').innerText = steps[stepIdx];
+  }, 1200);
+}
+
+// Drag & drop visual highlights
+const dropzone = document.getElementById('dropzone');
+['dragenter', 'dragover'].forEach(eventName => {
+  dropzone.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'var(--accent-primary)';
+    dropzone.style.background = 'rgba(99, 102, 241, 0.12)';
+  }, false);
+});
+['dragleave', 'drop'].forEach(eventName => {
+  dropzone.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+    dropzone.style.background = 'rgba(99, 102, 241, 0.03)';
+  }, false);
+});
+dropzone.addEventListener('drop', (e) => {
+  const dt = e.dataTransfer;
+  const files = dt.files;
+  if (files.length) {
+    document.getElementById('fileInput').files = files;
+    handleFileSelect(document.getElementById('fileInput'));
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,179 @@
+﻿{% extends "base.html" %}
+{% block title %}MedAI — Clinical AI Second Opinion Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Hero Section -->
+  <section class="hero-section" aria-labelledby="hero-title">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        AI-Powered Clinical Decision Support
+      </div>
+      <h1 class="hero-title" id="hero-title">
+        Intelligent<br />Medical Second Opinion
+      </h1>
+      <p class="hero-subtitle">
+        Upload patient history, laboratory results, and medical imaging. Our AI analyzes X-rays, MRI, and CT scans
+        using advanced vision models to provide a comprehensive differential diagnosis with probability scoring.
+      </p>
+      <div class="hero-actions">
+        <a href="{% url 'new_case' %}" class="btn btn-primary btn-lg" id="hero-new-case-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Start New Analysis
+        </a>
+        <a href="{% url 'history' %}" class="btn btn-ghost btn-lg" id="hero-history-btn">
+          View Case History
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <div class="scan-mockup">
+        <div class="scan-lines"></div>
+        <div class="scan-overlay-grid">
+          <div class="scan-node scan-node-active" style="top:35%;left:48%"></div>
+          <div class="scan-node" style="top:52%;left:38%"></div>
+          <div class="scan-node" style="top:42%;left:60%"></div>
+        </div>
+        <div class="scan-label-chip">AI Analyzing...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Strip -->
+  <section class="stats-strip" aria-label="Platform statistics">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-blue" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-total-cases">{{ total_cases }}</div>
+        <div class="stat-label">Total Cases</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-green" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        <div class="stat-value" id="stat-completed">{{ completed_reports }}</div>
+        <div class="stat-label">Reports Generated</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-purple" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      </div>
+      <div>
+        <div class="stat-value">Claude AI</div>
+        <div class="stat-label">Vision Model</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-red" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div>
+        <div class="stat-value">Real-time</div>
+        <div class="stat-label">Analysis Speed</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Capabilities Grid -->
+  <section class="section" aria-labelledby="capabilities-title">
+    <h2 class="section-title" id="capabilities-title">Platform Capabilities</h2>
+    <div class="capabilities-grid">
+      <div class="capability-card">
+        <div class="cap-icon cap-blue" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
+        </div>
+        <h3>Vision AI Scan Analysis</h3>
+        <p>Claude's multimodal vision model reads X-rays, MRI, and CT scans, identifying structural abnormalities, lesions, and radiological patterns.</p>
+      </div>
+      <div class="capability-card">
+        <div class="cap-icon cap-green" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <h3>Differential Diagnosis</h3>
+        <p>Generates ranked list of probable diagnoses with percentage confidence scores and detailed clinical reasoning for each condition.</p>
+      </div>
+      <div class="capability-card">
+        <div class="cap-icon cap-orange" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <h3>Heatmap Visualization</h3>
+        <p>Automatically generates color-coded heatmap overlays on medical scans, highlighting regions of abnormality for rapid visual assessment.</p>
+      </div>
+      <div class="capability-card">
+        <div class="cap-icon cap-purple" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+        <h3>Comprehensive Reporting</h3>
+        <p>Integrates patient history, vitals, labs, and imaging into a complete clinical report with prioritized next-step recommendations.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Cases -->
+  {% if recent_cases %}
+  <section class="section" aria-labelledby="recent-cases-title">
+    <div class="section-header">
+      <h2 class="section-title" id="recent-cases-title">Recent Cases</h2>
+      <a href="{% url 'history' %}" class="btn btn-ghost btn-sm">View All</a>
+    </div>
+    <div class="cases-table-wrapper">
+      <table class="data-table" aria-label="Recent patient cases">
+        <thead>
+          <tr>
+            <th scope="col">Patient</th>
+            <th scope="col">Age / Gender</th>
+            <th scope="col">Chief Complaint</th>
+            <th scope="col">Status</th>
+            <th scope="col">Date</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for case in recent_cases %}
+          <tr>
+            <td>
+              <div class="patient-cell">
+                <div class="patient-avatar" aria-hidden="true">{{ case.patient_name|first }}</div>
+                <div>
+                  <div class="patient-name">{{ case.patient_name }}</div>
+                  <div class="patient-id">ID: {{ case.patient_id|default:"N/A" }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{ case.age|default:"--" }} / {{ case.get_gender_display|default:"--" }}</td>
+            <td class="complaint-cell">{{ case.chief_complaint|truncatechars:60|default:"Not specified" }}</td>
+            <td>
+              {% if case.report %}
+                {% if case.report.status == "complete" %}
+                <span class="status-badge status-complete">Complete</span>
+                {% elif case.report.status == "processing" %}
+                <span class="status-badge status-processing">Processing</span>
+                {% else %}
+                <span class="status-badge status-error">Error</span>
+                {% endif %}
+              {% else %}
+              <span class="status-badge status-pending">Pending</span>
+              {% endif %}
+            </td>
+            <td class="date-cell">{{ case.created_at|date:"M d, Y" }}</td>
+            <td>
+              <a href="{% url 'case_detail' case.id %}" class="btn btn-sm btn-outline" aria-label="View case for {{ case.patient_name }}">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}New Patient Case — MedAI{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">New Patient Case</h1>
+      <p class="page-subtitle">Enter all available patient information for the most accurate AI analysis</p>
+    </div>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data" id="new-case-form" novalidate>
+    {% csrf_token %}
+
+    <!-- Quick Fill Demo Scenarios -->
+    <div class="sample-cases-bar" style="margin-bottom: 24px;">
+      <div class="sample-cases-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Quick-Fill Clinical Demo Scenarios:
+      </div>
+      <div class="sample-case-buttons">
+        <button type="button" class="btn btn-outline btn-sm" data-sample-case="pneumonia">🫁 Lobar Pneumonia Case</button>
+        <button type="button" class="btn btn-outline btn-sm" data-sample-case="stroke">🧠 Acute Ischemic Stroke Case</button>
+        <button type="button" class="btn btn-outline btn-sm" data-sample-case="cardiac">❤️ Acute NSTEMI / Cardiac Case</button>
+      </div>
+    </div>
+
+    <div class="form-layout">
+
+      <!-- Left Column: Patient Info -->
+      <div class="form-main">
+
+        <!-- Section: Patient Demographics -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-section-icon icon-blue" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div>
+              <h2 class="form-section-title">Patient Demographics</h2>
+              <p class="form-section-sub">Basic patient identification and demographic data</p>
+            </div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="form-group">
+              <label class="form-label" for="patient_name">Patient Name</label>
+              <input type="text" id="patient_name" name="patient_name" class="form-control" placeholder="Full name" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="patient_id">Patient ID</label>
+              <input type="text" id="patient_id" name="patient_id" class="form-control" placeholder="Hospital / clinic ID" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="referring_doctor">Referring Physician</label>
+              <input type="text" id="referring_doctor" name="referring_doctor" class="form-control" placeholder="Dr. Name" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="age">Age</label>
+              <input type="number" id="age" name="age" class="form-control" placeholder="Years" min="0" max="130" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="gender">Gender</label>
+              <select id="gender" name="gender" class="form-control form-select">
+                <option value="">Select...</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other / Prefer not to say</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="specialty_context">Specialty Context</label>
+              <select id="specialty_context" name="specialty_context" class="form-control form-select">
+                <option value="">Select specialty...</option>
+                <option value="Cardiology">Cardiology</option>
+                <option value="Radiology">Radiology</option>
+                <option value="Neurology">Neurology</option>
+                <option value="Pulmonology">Pulmonology</option>
+                <option value="Oncology">Oncology</option>
+                <option value="Gastroenterology">Gastroenterology</option>
+                <option value="Orthopedics">Orthopedics</option>
+                <option value="Emergency Medicine">Emergency Medicine</option>
+                <option value="General Medicine">General Medicine</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Clinical Information -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-section-icon icon-green" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <div>
+              <h2 class="form-section-title">Clinical Information</h2>
+              <p class="form-section-sub">Symptoms, history, and presenting complaint</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="chief_complaint">Chief Complaint <span class="required-star">*</span></label>
+            <input type="text" id="chief_complaint" name="chief_complaint" class="form-control" placeholder="e.g., Chest pain and shortness of breath for 3 days" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="clinical_history">Clinical History</label>
+            <textarea id="clinical_history" name="clinical_history" class="form-control form-textarea" placeholder="Detailed patient history: onset, duration, character of symptoms, associated symptoms, past medical history, surgical history, family history, social history..."></textarea>
+          </div>
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="medications">Current Medications</label>
+              <textarea id="medications" name="medications" class="form-control form-textarea-sm" placeholder="List medications and dosages..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="allergies">Allergies</label>
+              <textarea id="allergies" name="allergies" class="form-control form-textarea-sm" placeholder="Drug allergies, food allergies, latex..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Investigations -->
+        <div class="form-card">
+          <div class="form-card-header">
+            <div class="form-section-icon icon-purple" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <div>
+              <h2 class="form-section-title">Investigations &amp; Vitals</h2>
+              <p class="form-section-sub">Laboratory values and vital sign measurements</p>
+            </div>
+          </div>
+          <div class="form-grid form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="vital_signs">Vital Signs</label>
+              <textarea id="vital_signs" name="vital_signs" class="form-control form-textarea-sm" placeholder="BP: 130/85 mmHg&#10;HR: 88 bpm&#10;Temp: 37.2°C&#10;SpO2: 96% on air&#10;RR: 18/min&#10;Weight: 78 kg&#10;Height: 175 cm"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="lab_results">Laboratory Results</label>
+              <textarea id="lab_results" name="lab_results" class="form-control form-textarea-sm" placeholder="CBC, BMP, troponin, D-dimer, LFTs, etc.&#10;e.g., WBC: 11.2 K/µL, Hgb: 12.4 g/dL&#10;Troponin I: 0.08 ng/mL (elevated)..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Scan Uploads -->
+      <div class="form-sidebar">
+        <div class="form-card sticky-sidebar">
+          <div class="form-card-header">
+            <div class="form-section-icon icon-orange" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
+            </div>
+            <div>
+              <h2 class="form-section-title">Medical Imaging</h2>
+              <p class="form-section-sub">Upload scans for AI visual analysis</p>
+            </div>
+          </div>
+
+          <!-- Scan Upload Zone -->
+          <div class="upload-zone" id="upload-zone" tabindex="0" role="button" aria-label="Upload medical scans">
+            <input type="file" id="scan-file-input" name="scan_files" accept="image/*" multiple class="upload-input" aria-label="Select scan images" />
+            <div class="upload-zone-icon" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <p class="upload-zone-title">Drop scans here</p>
+            <p class="upload-zone-sub">X-Ray, MRI, CT Scan (PNG, JPG, WEBP)</p>
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('scan-file-input').click()">Browse Files</button>
+          </div>
+
+          <!-- Scans List -->
+          <div id="scans-list" class="scans-list" aria-live="polite"></div>
+
+          <!-- Scan metadata template (hidden, cloned by JS) -->
+          <template id="scan-meta-template">
+            <div class="scan-meta-row">
+              <div class="scan-thumb-wrap">
+                <img class="scan-thumb" src="" alt="Scan preview" />
+                <button type="button" class="scan-remove-btn" aria-label="Remove scan">&times;</button>
+              </div>
+              <div class="scan-meta-fields">
+                <div class="scan-filename"></div>
+                <select name="scan_type" class="form-control form-select form-select-sm">
+                  <option value="xray">X-Ray</option>
+                  <option value="mri">MRI</option>
+                  <option value="ct">CT Scan</option>
+                  <option value="ultrasound">Ultrasound</option>
+                  <option value="pet">PET Scan</option>
+                  <option value="other">Other</option>
+                </select>
+                <input type="text" name="body_region" placeholder="Body region (e.g., Chest)" class="form-control form-control-sm" />
+                <input type="text" name="scan_notes" placeholder="Notes (optional)" class="form-control form-control-sm" />
+              </div>
+            </div>
+          </template>
+
+          <div class="form-group" style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-primary btn-full btn-lg" id="submit-case-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Create Case &amp; Continue
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /form-layout -->
+  </form>
+</div>
+{% endblock %}

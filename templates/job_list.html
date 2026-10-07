@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Job Postings - AI ATS Intelligence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Job Openings & Requirements</h1>
+    <p class="page-subtitle">Configure required skills, experience thresholds, and benchmark criteria.</p>
+  </div>
+  <div>
+    <a href="{% url 'job_create' %}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Create Position
+    </a>
+  </div>
+</div>
+
+<div class="glass-panel" style="padding: 1.5rem;">
+  {% if jobs %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Job Title</th>
+          <th>Department</th>
+          <th>Required Skills</th>
+          <th>Experience Req.</th>
+          <th>Shortlist Threshold</th>
+          <th>Candidates</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+          <tr>
+            <td>
+              <a href="{% url 'job_detail' job.id %}" style="color: var(--text-primary); font-weight: 600; text-decoration: none;">
+                {{ job.title }}
+              </a>
+            </td>
+            <td><span class="pill pill-slate">{{ job.department }}</span></td>
+            <td>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; max-width: 320px;">
+                {% for skill in job.required_skills|slice:":5" %}
+                  <span class="pill pill-indigo" style="font-size: 0.72rem; padding: 0.15rem 0.5rem;">{{ skill }}</span>
+                {% endfor %}
+                {% if job.required_skills|length > 5 %}
+                  <span class="pill pill-slate" style="font-size: 0.72rem;">+{{ job.required_skills|length|add:"-5" }} more</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>{{ job.experience_years }} Years</td>
+            <td>
+              <span class="pill pill-amber" style="font-weight: 700;">{{ job.threshold_score }}%</span>
+            </td>
+            <td>{{ job.evaluations.count }} Applicants</td>
+            <td>
+              <div style="display: flex; gap: 0.5rem;">
+                <a href="{% url 'job_detail' job.id %}" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                  <i class="fa-solid fa-eye"></i> View
+                </a>
+                <a href="{% url 'job_upload_resume' job.id %}" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                  <i class="fa-solid fa-upload"></i> Match
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--text-muted); padding: 2rem 0; text-align: center;">No job postings available yet. Create your first opening above.</p>
+  {% endif %}
+</div>
+{% endblock %}

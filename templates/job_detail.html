@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }} - Position Details{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+      <span class="pill pill-slate">{{ job.department }}</span>
+      <span class="pill pill-indigo">{{ job.experience_years }}+ Years Experience</span>
+    </div>
+    <h1 class="page-title">{{ job.title }}</h1>
+    <p class="page-subtitle">{{ total_applicants }} total candidates evaluated &bull; {{ shortlisted }} shortlisted &bull; {{ rejected }} rejected</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <a href="{% url 'job_upload_resume' job.id %}" class="btn btn-primary">
+      <i class="fa-solid fa-cloud-arrow-up"></i> Upload Candidate Resume
+    </a>
+  </div>
+</div>
+
+<!-- Grid with Job Meta & Threshold Editor -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+  <div class="glass-panel" style="padding: 1.5rem;">
+    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;">Description & Scope</h2>
+    <p style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6; margin-bottom: 1.25rem;">
+      {{ job.description }}
+    </p>
+
+    <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+      Mandatory & Preferred Skills
+    </h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+      {% for skill in job.required_skills %}
+        <span class="pill pill-indigo" style="font-size: 0.85rem; padding: 0.3rem 0.8rem;">
+          <i class="fa-solid fa-code" style="font-size: 0.75rem;"></i> {{ skill }}
+        </span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recruiter Shortlist Threshold Setting -->
+  <div class="glass-panel" style="padding: 1.5rem;">
+    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">
+      <i class="fa-solid fa-sliders" style="color: var(--accent-primary);"></i> Threshold Calibration
+    </h2>
+    <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1rem;">
+      Adjust the minimum match score required for automatic shortlisting. Updating this recalculates shortlist status across all applicants.
+    </p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="update_threshold" value="1">
+      <div style="margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Cutoff Score</span>
+          <span style="font-weight: 800; color: var(--accent-amber); font-size: 1.1rem;">{{ job.threshold_score }}%</span>
+        </div>
+        <input type="range" name="threshold_score" min="40" max="95" step="1" value="{{ job.threshold_score }}" 
+               class="form-control" style="padding: 0; cursor: pointer;"
+               oninput="document.getElementById('thresholdDisplay').innerText = this.value + '%'">
+        <div style="text-align: right; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+          Selected: <b id="thresholdDisplay">{{ job.threshold_score }}%</b>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center;">
+        <i class="fa-solid fa-arrows-rotate"></i> Recalculate Shortlist
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Evaluated Applicants Table -->
+<div class="glass-panel" style="padding: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <h2 style="font-size: 1.2rem; font-weight: 700;">
+      <i class="fa-solid fa-users-gear" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i> Evaluated Applicants (Ranked by Match Score)
+    </h2>
+  </div>
+
+  {% if evaluations %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Candidate Name</th>
+          <th>Overall Score</th>
+          <th>Decision</th>
+          <th>Model Scores (TF-IDF / Skill / ML)</th>
+          <th>Matched Skills</th>
+          <th>Evaluated At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ev in evaluations %}
+          <tr>
+            <td>
+              <a href="{% url 'evaluation_detail' ev.id %}" style="color: var(--text-primary); font-weight: 700; text-decoration: none;">
+                {{ ev.resume.candidate_name }}
+              </a>
+              {% if ev.resume.email %}
+                <div style="color: var(--text-muted); font-size: 0.78rem;">{{ ev.resume.email }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-size: 1.3rem; font-weight: 800; color: {% if ev.is_shortlisted %}var(--accent-emerald){% else %}var(--accent-rose){% endif %};">
+                {{ ev.overall_score }}%
+              </span>
+            </td>
+            <td>
+              {% if ev.is_shortlisted %}
+                <span class="pill pill-emerald"><i class="fa-solid fa-check"></i> Shortlisted</span>
+              {% else %}
+                <span class="pill pill-rose"><i class="fa-solid fa-graduation-cap"></i> Rejected (Upskill)</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                <span>TF-IDF: <b>{{ ev.model_scores.model_1_tfidf_cosine.score }}%</b></span> &bull;
+                <span>Skills: <b>{{ ev.model_scores.model_2_skill_coverage.score }}%</b></span> &bull;
+                <span>ML: <b>{{ ev.model_scores.model_3_random_forest_ml.score }}%</b></span>
+              </div>
+            </td>
+            <td>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; max-width: 250px;">
+                {% for sk in ev.matched_skills|slice:":3" %}
+                  <span class="pill pill-emerald" style="font-size: 0.7rem; padding: 0.1rem 0.4rem;">{{ sk }}</span>
+                {% endfor %}
+                {% if ev.matched_skills|length > 3 %}
+                  <span class="pill pill-slate" style="font-size: 0.7rem;">+{{ ev.matched_skills|length|add:"-3" }}</span>
+                {% endif %}
+              </div>
+            </td>
+            <td style="color: var(--text-muted); font-size: 0.82rem;">{{ ev.created_at|date:"M d, Y H:i" }}</td>
+            <td>
+              <div style="display: flex; gap: 0.5rem;">
+                <a href="{% url 'evaluation_detail' ev.id %}" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                  <i class="fa-solid fa-chart-column"></i> Cockpit
+                </a>
+                <a href="{% url 'download_report_pdf' ev.id %}" class="btn btn-secondary" style="padding: 0.35rem 0.6rem; font-size: 0.8rem;" title="Download PDF Report">
+                  <i class="fa-solid fa-file-pdf"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div style="text-align: center; padding: 3rem 0; color: var(--text-muted);">
+      <i class="fa-solid fa-user-xmark" style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+      <p>No candidate resumes uploaded for this position yet.</p>
+      <a href="{% url 'job_upload_resume' job.id %}" class="btn btn-primary" style="margin-top: 1rem;">
+        Upload First Resume
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Position - AI ATS Intelligence{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Create Job Posting</h1>
+    <p class="page-subtitle">Define role requirements, mandatory skills, and recruiter shortlisting threshold.</p>
+  </div>
+</div>
+
+<div class="glass-panel" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+  <form method="POST">
+    {% csrf_token %}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+      <div>
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+          Job Title *
+        </label>
+        <input type="text" name="title" required class="form-control" placeholder="e.g. Senior Backend Engineer" value="Senior Backend Engineer">
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+          Department
+        </label>
+        <input type="text" name="department" class="form-control" placeholder="e.g. Core Engineering" value="Core Engineering">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+      <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+        Job Description & Responsibilities *
+      </label>
+      <textarea name="description" required class="form-control" style="min-height: 120px;" placeholder="Outline the core responsibilities, architectural focus, and daily expectations...">We are seeking an experienced Senior Backend Engineer to lead backend architecture. You will design scalable microservices using Python and Django, manage relational databases in PostgreSQL, optimize caching with Redis, and containerize systems using Docker and Kubernetes on AWS.</textarea>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+      <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+        Required Skills (Comma or newline separated) *
+      </label>
+      <input type="text" name="required_skills" required class="form-control" placeholder="Python, Django, PostgreSQL, Docker, AWS, Redis, REST APIs, CI/CD" value="Python, Django, PostgreSQL, Docker, AWS, Redis, REST APIs, CI/CD">
+      <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+        These skills will feed the Tier 2 synonym dictionary, Tier 3 semantic fallback, and skill gap analysis.
+      </small>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+      <div>
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+          Required Experience (Years)
+        </label>
+        <input type="number" name="experience_years" min="0" max="25" class="form-control" value="3">
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">
+          Shortlist Match Threshold (%) *
+        </label>
+        <input type="number" step="0.5" min="10" max="100" name="threshold_score" class="form-control" value="70.0">
+        <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+          Resumes scoring &ge; threshold are Shortlisted; below threshold trigger the Skill Gap & AI Learning Path.
+        </small>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+      <a href="{% url 'job_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fa-solid fa-check"></i> Create Job Posting
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

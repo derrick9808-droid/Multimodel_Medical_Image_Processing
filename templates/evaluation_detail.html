@@ -1,0 +1,789 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block title %}Evaluation: {{ resume.candidate_name }} &bull; {{ job.title }}{% endblock %}
+
+{% block content %}
+<!-- Decision Hero Banner -->
+<div class="decision-hero {% if eval.is_shortlisted %}shortlisted{% else %}rejected{% endif %}">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+      {% if eval.is_shortlisted %}
+        <span class="pill pill-emerald" style="font-size: 0.95rem; padding: 0.35rem 1rem;">
+          <i class="fa-solid fa-circle-check"></i> SHORTLISTED
+        </span>
+      {% else %}
+        <span class="pill pill-rose" style="font-size: 0.95rem; padding: 0.35rem 1rem;">
+          <i class="fa-solid fa-triangle-exclamation"></i> BELOW THRESHOLD &bull; REJECTED
+        </span>
+      {% endif %}
+      <span class="pill pill-slate">Threshold: {{ job.threshold_score }}%</span>
+    </div>
+
+    <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em;">
+      {{ resume.candidate_name }}
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 1rem; margin-top: 0.25rem;">
+      Position: <b style="color: var(--text-primary);">{{ job.title }}</b> &bull; Department: {{ job.department }}
+    </p>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 2rem;">
+    <!-- Score Ring -->
+    <div class="decision-score-ring glass-panel">
+      <div style="text-align: center;">
+        <div class="score-number" style="color: {% if eval.is_shortlisted %}var(--accent-emerald){% else %}var(--accent-rose){% endif %};">
+          {{ eval.overall_score }}<span style="font-size: 1.2rem;">%</span>
+        </div>
+        <div class="score-label">Match Score</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <a href="{% url 'download_report_pdf' eval.id %}" class="btn btn-primary" style="white-space: nowrap;">
+        <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+      </a>
+      <a href="{% url 'job_detail' job.id %}" class="btn btn-secondary" style="white-space: nowrap;">
+        <i class="fa-solid fa-arrow-left"></i> Back to Position
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Tab Navigation Bar -->
+<div class="tabs-nav">
+  <button class="tab-btn active" onclick="switchTab('scoring')">
+    <i class="fa-solid fa-layer-group"></i> Multi-Model & SHAP AI
+  </button>
+  <button class="tab-btn" onclick="switchTab('rolefit')">
+    <i class="fa-solid fa-chart-pie"></i> Role-Fit Radar Heatmap
+  </button>
+
+  {% if eval.is_shortlisted %}
+    <button class="tab-btn" onclick="switchTab('atspreview')">
+      <i class="fa-solid fa-file-lines"></i> ATS Preview & JD Diff
+    </button>
+    <button class="tab-btn" onclick="switchTab('scansim')">
+      <i class="fa-solid fa-eye"></i> Recruiter 6-Sec Scan Simulation
+    </button>
+    <button class="tab-btn" onclick="switchTab('interview')">
+      <i class="fa-solid fa-microphone-lines"></i> AI Mock Interview
+      {% if interview_session and interview_session.completed %}
+        <span class="pill pill-emerald" style="font-size: 0.65rem; margin-left: 0.3rem;">Scored</span>
+      {% endif %}
+    </button>
+  {% else %}
+    <button class="tab-btn" onclick="switchTab('learningpath')">
+      <i class="fa-solid fa-graduation-cap"></i> Skill Gap & AI Learning Path
+      <span class="pill pill-amber" style="font-size: 0.65rem; margin-left: 0.3rem;">Active</span>
+    </button>
+  {% endif %}
+</div>
+
+<!-- ========================================================================= -->
+<!-- TAB 1: Multi-Model Scoring & SHAP Explainable AI                         -->
+<!-- ========================================================================= -->
+<div id="scoring" class="tab-pane active">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    
+    <!-- Multi-Model Scoring Synthesis -->
+    <div class="glass-panel" style="padding: 1.75rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-scale-balanced" style="color: var(--accent-primary); margin-right: 0.5rem;"></i>
+        Multi-Model Scoring Reconciliation
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
+        Reconciles 3 independent evaluation models to eliminate single-model bias.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        {% for key, model in eval.model_scores.items %}
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <span style="font-weight: 600; font-size: 0.92rem;">{{ model.name }}</span>
+              <div>
+                <span class="pill pill-slate" style="font-size: 0.72rem;">Weight: {{ model.weight }}</span>
+                <span style="font-weight: 800; font-size: 1.1rem; color: var(--accent-cyan); margin-left: 0.5rem;">{{ model.score }}%</span>
+              </div>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 0.5rem;">
+              {{ model.description }}
+            </p>
+            <div style="height: 6px; background: rgba(255, 255, 255, 0.06); border-radius: var(--radius-full); overflow: hidden;">
+              <div style="width: {{ model.score }}%; height: 100%; background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan));"></div>
+            </div>
+          </div>
+        {% endfor %}
+
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-sm); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">Reconciled Composite Score</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">Ensemble synthesis across all models</div>
+          </div>
+          <div style="font-size: 1.8rem; font-weight: 800; color: {% if eval.is_shortlisted %}var(--accent-emerald){% else %}var(--accent-rose){% endif %};">
+            {{ eval.overall_score }}%
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Explainable AI: SHAP Feature Attributions -->
+    <div class="glass-panel" style="padding: 1.75rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-purple); margin-right: 0.5rem;"></i>
+        Explainable AI (SHAP Values)
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
+        Shows exactly why the candidate received this score. Shapley values reveal positive and negative feature push.
+      </p>
+
+      <!-- Key Insights -->
+      <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.5rem;">
+        <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--accent-purple); margin-bottom: 0.5rem;">
+          Attribution Insights
+        </div>
+        <ul style="list-style: none; font-size: 0.85rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+          {% for ins in eval.shap_data.insights %}
+            <li><i class="fa-solid fa-arrow-right" style="color: var(--accent-purple); font-size: 0.75rem;"></i> {{ ins }}</li>
+          {% empty %}
+            <li>Candidate features are evenly distributed around the baseline expectation.</li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- Feature Impact Bars -->
+      <div class="shap-bar-container">
+        {% for feat in eval.shap_data.features %}
+          <div class="shap-bar-row">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">
+              {{ feat.feature }}
+            </div>
+            <div class="shap-track">
+              {% if feat.impact == "positive" %}
+                <div class="shap-fill-pos" style="width: {% widthratio feat.abs_impact 15 100 %}%;"></div>
+              {% else %}
+                <div class="shap-fill-neg" style="width: {% widthratio feat.abs_impact 15 100 %}%;"></div>
+              {% endif %}
+            </div>
+            <div style="text-align: right; font-weight: 700; font-size: 0.88rem; color: {% if feat.impact == 'positive' %}var(--accent-emerald){% else %}var(--accent-rose){% endif %};">
+              {{ feat.percentage_str }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- TAB 2: Role-Fit Radar Heatmap & Benchmark Matrix                         -->
+<!-- ========================================================================= -->
+<div id="rolefit" class="tab-pane">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <!-- Radar Chart Canvas -->
+    <div class="glass-panel" style="padding: 1.75rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-radar" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i>
+        Role-Fit Spectrum Radar
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
+        Evaluates the resume against 7 standardized industry benchmark profiles.
+      </p>
+      <div style="max-width: 440px; margin: 0 auto; position: relative;">
+        <canvas id="roleFitRadarChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Ranked Benchmark Cards -->
+    <div class="glass-panel" style="padding: 1.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.15rem; font-weight: 700;">Role Alignment Rankings</h2>
+        <span class="pill pill-indigo">Primary Fit: {{ eval.role_fit_data.best_fit_role }}</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+        {% for r in eval.role_fit_data.ranked_roles %}
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <div>
+                <span style="font-weight: 700; font-size: 0.95rem;">{{ r.role_name }}</span>
+                <span class="pill pill-slate" style="font-size: 0.7rem; margin-left: 0.5rem;">{{ r.category }}</span>
+              </div>
+              <span style="font-weight: 800; font-size: 1.1rem; color: {{ r.color }};">{{ r.score }}%</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              Matched Competencies: 
+              {% for ms in r.matched_skills|slice:":5" %}
+                <span style="color: var(--text-secondary);">{{ ms }}</span>{% if not forloop.last %}, {% endif %}
+              {% empty %}
+                <span style="color: var(--text-muted);">None</span>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- TAB 3: Shortlisted Branch - ATS Preview & JD Diff View                   -->
+<!-- ========================================================================= -->
+{% if eval.is_shortlisted %}
+<div id="atspreview" class="tab-pane">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    
+    <!-- ATS Parsing Preview (Raw extraction artifact) -->
+    <div class="glass-panel" style="padding: 1.75rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h2 style="font-size: 1.15rem; font-weight: 700;">
+          <i class="fa-solid fa-code" style="color: var(--accent-cyan); margin-right: 0.5rem;"></i>
+          ATS Parsing Preview
+        </h2>
+        <span class="pill pill-emerald"><i class="fa-solid fa-check"></i> ATS Clean</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+        Displays exact raw text extracted by the ATS parser to verify formatting integrity.
+      </p>
+
+      <!-- Entity pills extracted by spaCy custom NER -->
+      <div style="margin-bottom: 1rem;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.4rem;">
+          spaCy Custom NER Identified Entities
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+          {% for sk in resume.extracted_entities.SKILL|slice:":10" %}
+            <span class="pill pill-indigo" style="font-size: 0.72rem;">SKILL: {{ sk }}</span>
+          {% endfor %}
+          {% for deg in resume.extracted_entities.DEGREE|slice:":3" %}
+            <span class="pill pill-emerald" style="font-size: 0.72rem;">DEGREE: {{ deg }}</span>
+          {% endfor %}
+          {% for dt in resume.extracted_entities.DATE|slice:":4" %}
+            <span class="pill pill-amber" style="font-size: 0.72rem;">DATE: {{ dt }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <pre style="background: #090D16; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 1rem; color: #CBD5E1; font-size: 0.8rem; max-height: 480px; overflow-y: auto; white-space: pre-wrap;">{{ resume.raw_text }}</pre>
+    </div>
+
+    <!-- JD Diff View (Green = Present, Red = Missing) -->
+    <div class="glass-panel" style="padding: 1.75rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-code-compare" style="color: var(--accent-primary); margin-right: 0.5rem;"></i>
+        Job Description Keyword Diff
+      </h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
+        Side-by-side keyword presence vs absence: <span style="color: var(--accent-emerald); font-weight: 700;">Green</span> = satisfied, <span style="color: var(--accent-rose); font-weight: 700;">Red</span> = missing.
+      </p>
+
+      <div class="diff-grid">
+        {% for item in diff_items %}
+          <div class="diff-card {{ item.status }}">
+            <span>
+              <i class="fa-solid {% if item.status == 'present' %}fa-plus{% else %}fa-minus{% endif %}"></i>
+              {{ item.skill }}
+            </span>
+            <span style="font-size: 0.75rem; text-transform: uppercase;">
+              {% if item.status == 'present' %}Found{% else %}Missing{% endif %}
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- TAB 4: Recruiter 6-Second Scan Simulation                                -->
+<!-- ========================================================================= -->
+<div id="scansim" class="tab-pane">
+  <div class="scan-container">
+    
+    <!-- Heatmap & Eye Tracking Canvas -->
+    <div class="glass-panel" style="padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 700;">
+            <i class="fa-solid fa-eye" style="color: var(--accent-rose); margin-right: 0.5rem;"></i>
+            Recruiter 6-Second Gaze Simulation
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.82rem;">
+            F-pattern fixation coordinates, visual typographic prominence, and attention heatmap overlay.
+          </p>
+        </div>
+        <button class="btn btn-primary" onclick="animateRecruiterScan()" style="font-size: 0.85rem;">
+          <i class="fa-solid fa-play"></i> Replay 6-Sec Scan
+        </button>
+      </div>
+
+      <!-- Canvas Box -->
+      <div class="resume-canvas-wrapper" id="canvasWrapper">
+        <canvas id="scanOverlayCanvas"></canvas>
+        <div style="padding: 2rem; color: #CBD5E1; font-family: 'Inter', sans-serif; pointer-events: none; opacity: 0.75;">
+          <h1 style="font-size: 1.8rem; font-weight: 800; color: #FFF; margin-bottom: 0.25rem;">{{ resume.candidate_name }}</h1>
+          <p style="color: #94A3B8; font-size: 0.9rem; margin-bottom: 1.5rem;">Software Engineering Professional &bull; San Francisco, CA</p>
+          
+          <h3 style="font-size: 1rem; text-transform: uppercase; color: #38BDF8; letter-spacing: 0.05em; border-bottom: 1px solid #334155; padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Professional Experience</h3>
+          <p style="font-size: 0.88rem; font-weight: 600; color: #FFF;">Senior Software Engineer &bull; Tech Systems Corp</p>
+          <p style="font-size: 0.8rem; color: #94A3B8; margin-bottom: 0.75rem;">Jan 2021 &ndash; Present &bull; 4 years</p>
+          <ul style="font-size: 0.8rem; color: #CBD5E1; padding-left: 1.25rem; margin-bottom: 1.5rem; line-height: 1.6;">
+            <li>Architected microservices handling 45M daily requests with Django and Redis.</li>
+            <li>Deployed containerized CI/CD pipelines on Kubernetes and AWS EKS.</li>
+            <li>Mentored junior engineers and conducted extensive code reviews.</li>
+          </ul>
+
+          <h3 style="font-size: 1rem; text-transform: uppercase; color: #38BDF8; letter-spacing: 0.05em; border-bottom: 1px solid #334155; padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Technical Skills</h3>
+          <p style="font-size: 0.82rem; color: #E2E8F0; line-height: 1.6; margin-bottom: 1.5rem;">
+            Python, Django, PostgreSQL, Docker, Kubernetes, AWS, REST APIs, CI/CD, Redis, Git, Microservices
+          </p>
+
+          <h3 style="font-size: 1rem; text-transform: uppercase; color: #38BDF8; letter-spacing: 0.05em; border-bottom: 1px solid #334155; padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Education & Credentials</h3>
+          <p style="font-size: 0.88rem; font-weight: 600; color: #FFF;">Bachelor of Science in Computer Science &bull; 2017 &ndash; 2021</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scan Diagnostics & Timeline -->
+    <div class="glass-panel" style="padding: 1.5rem;">
+      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem;">
+        <i class="fa-solid fa-stopwatch" style="color: var(--accent-amber); margin-right: 0.4rem;"></i>
+        Gaze Fixation Timeline
+      </h3>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+        {% for fix in eval.scan_simulation.fixation_timeline %}
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--accent-amber);">
+              <span>{{ fix.time_window }}</span>
+              <span>Dwell: {{ fix.dwell_seconds }}s</span>
+            </div>
+            <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary); margin-top: 0.2rem;">
+              {{ fix.label }}
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">
+              Focus: {{ fix.focus_target }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem;">Visual Hierarchy Scores</h3>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Typographic Hierarchy</span>
+          <b>{{ eval.scan_simulation.visual_hierarchy_score }}/100</b>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Layout Readability</span>
+          <b>{{ eval.scan_simulation.layout_readability_score }}/100</b>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">ATS Layout Cleanliness</span>
+          <b>{{ eval.scan_simulation.ats_formatting_cleanliness }}/100</b>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- TAB 5: AI Mock Interview Simulator & NLP Answer Evaluation               -->
+<!-- ========================================================================= -->
+<div id="interview" class="tab-pane">
+  <div style="max-width: 900px; margin: 0 auto;">
+    
+    <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <div>
+          <h2 style="font-size: 1.3rem; font-weight: 800;">
+            <i class="fa-solid fa-headset" style="color: var(--accent-primary); margin-right: 0.5rem;"></i>
+            AI Mock Interview Terminal
+          </h2>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">
+            Questions generated by Claude calibrated to the role and candidate profile. Answers are evaluated using NLP rubrics.
+          </p>
+        </div>
+
+        {% if interview_session and interview_session.completed %}
+          <div style="text-align: right;">
+            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-emerald);">
+              {{ interview_session.overall_score }}<span style="font-size: 1rem;">/100</span>
+            </div>
+            <span class="pill pill-emerald">NLP Evaluated</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- If Interview Completed, Display NLP Feedback Report -->
+      {% if interview_session and interview_session.completed %}
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 2rem;">
+          <h3 style="font-size: 1rem; font-weight: 700; color: #34D399; margin-bottom: 0.5rem;">
+            <i class="fa-solid fa-clipboard-check"></i> Overall Interview Rubric Assessment
+          </h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.75rem;">
+            <div>
+              <b style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Demonstrated Strengths:</b>
+              <ul style="padding-left: 1.2rem;">
+                {% for st in interview_session.evaluation_report.strengths %}
+                  <li>{{ st }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div>
+              <b style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Refinement Areas:</b>
+              <ul style="padding-left: 1.2rem;">
+                {% for imp in interview_session.evaluation_report.areas_for_improvement %}
+                  <li>{{ imp }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Questions Form -->
+      <form method="POST" action="{% url 'submit_interview_answer' eval.id %}">
+        {% csrf_token %}
+
+        {% for q in interview_session.questions %}
+          <div class="interview-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="pill pill-indigo">{{ q.category }}</span>
+              <span class="pill pill-slate">Difficulty: {{ q.difficulty }}</span>
+            </div>
+
+            <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; color: #FFF;">
+              {{ forloop.counter }}. {{ q.question }}
+            </h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;">
+              <i>Evaluation Benchmark:</i> {{ q.eval_criteria }}
+            </p>
+
+            <!-- Text Answer Area -->
+            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.4rem;">
+              Candidate Response (Typed or Dictated):
+            </label>
+            <textarea name="answer_{{ q.id }}" class="form-control" placeholder="Type your structured answer here (STAR method: Situation, Task, Action, Result)..." required>{% if interview_session and interview_session.candidate_answers %}{{ interview_session.candidate_answers|dict_lookup:q.id }}{% endif %}</textarea>
+
+            <!-- Feedback if already evaluated -->
+            {% if interview_session and interview_session.completed %}
+              {% for ev in interview_session.evaluation_report.evaluations %}
+                {% if ev.question == q.question %}
+                  <div style="margin-top: 1rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                      <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary);">NLP Rubric Feedback:</span>
+                      <span style="font-weight: 800; font-size: 0.95rem; color: var(--accent-cyan);">Score: {{ ev.score }}/100</span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-secondary);">{{ ev.feedback }}</p>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </div>
+        {% endfor %}
+
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">
+            <i class="fa-solid fa-paper-plane"></i> Submit Answers & Score with NLP
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+<!-- ========================================================================= -->
+<!-- TAB 6: Rejected Branch - Skill Gap & Personalized AI Learning Path        -->
+<!-- ========================================================================= -->
+{% if not eval.is_shortlisted and eval.learning_path %}
+<div id="learningpath" class="tab-pane active">
+  <div style="max-width: 960px; margin: 0 auto;">
+    
+    <!-- Advisor Intro Card -->
+    <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem; border-left: 4px solid var(--accent-rose);">
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+        <span class="pill pill-rose"><i class="fa-solid fa-graduation-cap"></i> Rejected / Career Pathway</span>
+        <span class="pill pill-slate">Target Position: {{ job.title }}</span>
+      </div>
+      <h2 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem;">
+        Personalized AI Learning Path & Skill Gap Bridge
+      </h2>
+      <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+        {{ eval.learning_path.summary }}
+      </p>
+
+      <!-- Missing Skills Badges -->
+      <div style="margin-top: 1.25rem;">
+        <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.5rem;">
+          Identified Skill Gaps to Satisfy:
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+          {% for sk in eval.learning_path.missing_skills %}
+            <span class="pill pill-rose" style="font-size: 0.85rem; padding: 0.35rem 0.8rem;">
+              <i class="fa-solid fa-circle-exclamation"></i> {{ sk }}
+            </span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline of Learning Milestones -->
+    <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem;">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-route" style="color: var(--accent-primary); margin-right: 0.5rem;"></i>
+        Recommended Learning Roadmap ({{ eval.learning_path.estimated_weeks }} Weeks)
+      </h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">
+        Curated curriculum created by Claude targeting your exact missing skills.
+      </p>
+
+      <div class="timeline">
+        {% for ms in eval.learning_path.milestones %}
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: #FFF; margin-bottom: 0.35rem;">
+              {{ ms.phase }}
+            </h4>
+            
+            <div style="margin-bottom: 0.75rem;">
+              <b style="font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase;">Key Action Items:</b>
+              <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.5;">
+                {% for act in ms.actions %}
+                  <li>{{ act }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            {% if ms.recommended_resources %}
+              <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.75rem;">
+                <b style="font-size: 0.75rem; text-transform: uppercase; color: var(--accent-primary); display: block; margin-bottom: 0.35rem;">
+                  Recommended Study Materials & Guides:
+                </b>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                  {% for res in ms.recommended_resources %}
+                    <a href="{{ res.link }}" target="_blank" style="color: #38BDF8; font-size: 0.82rem; text-decoration: none;">
+                      <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem;"></i> <b>{{ res.title }}</b> ({{ res.type }})
+                    </a>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Capstone Project Card -->
+    {% if eval.learning_path.capstone_project %}
+      <div class="glass-panel" style="padding: 2rem; border-top: 3px solid var(--accent-emerald);">
+        <span class="pill pill-emerald" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-trophy"></i> Portfolio Capstone</span>
+        <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem;">
+          {{ eval.learning_path.capstone_project.title }}
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem;">
+          {{ eval.learning_path.capstone_project.description }}
+        </p>
+
+        <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.35rem;">
+          Key Project Deliverables:
+        </div>
+        <ul style="padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+          {% for deliv in eval.learning_path.capstone_project.key_deliverables %}
+            <li>{{ deliv }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// -------------------------------------------------------------
+// TAB SWITCHING
+// -------------------------------------------------------------
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+  event.currentTarget.classList.add('active');
+  const targetPane = document.getElementById(tabId);
+  if (targetPane) targetPane.classList.add('active');
+
+  // Trigger Radar Chart resize or eye-scan canvas draw if needed
+  if (tabId === 'rolefit' && window.radarChartInstance) {
+    window.radarChartInstance.resize();
+  }
+  if (tabId === 'scansim') {
+    drawRecruiterHeatmap();
+  }
+}
+
+// -------------------------------------------------------------
+// RADAR CHART (CHART.JS)
+// -------------------------------------------------------------
+const radarDataRaw = {{ radar_data_json|safe }};
+if (radarDataRaw && radarDataRaw.labels) {
+  const ctx = document.getElementById('roleFitRadarChart').getContext('2d');
+  window.radarChartInstance = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: radarDataRaw.labels,
+      datasets: [{
+        label: 'Role Alignment (%)',
+        data: radarDataRaw.scores,
+        backgroundColor: 'rgba(99, 102, 241, 0.25)',
+        borderColor: '#6366F1',
+        borderWidth: 2,
+        pointBackgroundColor: '#38BDF8',
+        pointBorderColor: '#FFF',
+        pointHoverBackgroundColor: '#FFF',
+        pointHoverBorderColor: '#6366F1'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+          grid: { color: 'rgba(255, 255, 255, 0.08)' },
+          pointLabels: {
+            color: '#CBD5E1',
+            font: { family: 'Inter', size: 11, weight: '600' }
+          },
+          ticks: {
+            display: false,
+            min: 0,
+            max: 100
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+
+// -------------------------------------------------------------
+// RECRUITER 6-SECOND EYE-SCAN SIMULATION CANVAS
+// -------------------------------------------------------------
+const heatmapPoints = {{ heatmap_points_json|safe }};
+const fixationTimeline = {{ fixation_timeline_json|safe }};
+
+function drawRecruiterHeatmap() {
+  const canvas = document.getElementById('scanOverlayCanvas');
+  if (!canvas) return;
+  const wrapper = document.getElementById('canvasWrapper');
+  canvas.width = wrapper.clientWidth;
+  canvas.height = wrapper.clientHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw Heatmap Gaussian Glows
+  heatmapPoints.forEach(pt => {
+    const cx = (pt.x / 100) * canvas.width;
+    const cy = (pt.y / 100) * canvas.height;
+    const rad = pt.radius || 35;
+
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    const alpha = pt.intensity || 0.6;
+    grad.addColorStop(0, `rgba(244, 63, 94, ${alpha * 0.7})`);
+    grad.addColorStop(0.4, `rgba(245, 158, 11, ${alpha * 0.5})`);
+    grad.addColorStop(0.8, `rgba(56, 189, 248, ${alpha * 0.2})`);
+    grad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Draw Gaze Trail Path
+  if (fixationTimeline.length > 1) {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    
+    fixationTimeline.forEach((fix, i) => {
+      const px = (fix.x / 100) * canvas.width;
+      const py = (fix.y / 100) * canvas.height;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw fixation anchor circles
+    fixationTimeline.forEach((fix, i) => {
+      const px = (fix.x / 100) * canvas.width;
+      const py = (fix.y / 100) * canvas.height;
+
+      ctx.beginPath();
+      ctx.fillStyle = '#6366F1';
+      ctx.arc(px, py, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#FFF';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#FFF';
+      ctx.font = 'bold 9px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText((i + 1).toString(), px, py + 3);
+    });
+  }
+}
+
+function animateRecruiterScan() {
+  const canvas = document.getElementById('scanOverlayCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  let currentStep = 0;
+  const interval = setInterval(() => {
+    if (currentStep >= fixationTimeline.length) {
+      clearInterval(interval);
+      drawRecruiterHeatmap();
+      return;
+    }
+
+    const fix = fixationTimeline[currentStep];
+    const px = (fix.x / 100) * canvas.width;
+    const py = (fix.y / 100) * canvas.height;
+
+    // Pulse effect
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(244, 63, 94, 0.7)';
+    ctx.arc(px, py, 25, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.fillStyle = '#FFF';
+    ctx.arc(px, py, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    currentStep++;
+  }, 1000); // 1 second per anchor = 5-6 second simulation
+}
+
+// Initial draw if scan sim active
+window.addEventListener('load', () => {
+  setTimeout(drawRecruiterHeatmap, 300);
+});
+</script>
+{% endblock %}

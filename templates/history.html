@@ -1,0 +1,85 @@
+﻿{% extends "base.html" %}
+{% block title %}Case History — MedAI{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Case History</h1>
+      <p class="page-subtitle">All patient cases and analysis reports</p>
+    </div>
+    <a href="{% url 'new_case' %}" class="btn btn-primary" id="history-new-case-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Case
+    </a>
+  </div>
+
+  {% if cases %}
+  <div class="cases-table-wrapper">
+    <table class="data-table" aria-label="Patient case history">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Patient</th>
+          <th scope="col">Age / Gender</th>
+          <th scope="col">Specialty</th>
+          <th scope="col">Chief Complaint</th>
+          <th scope="col">Scans</th>
+          <th scope="col">Status</th>
+          <th scope="col">Date</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for case in cases %}
+        <tr>
+          <td class="id-cell">{{ case.id }}</td>
+          <td>
+            <div class="patient-cell">
+              <div class="patient-avatar">{{ case.patient_name|first }}</div>
+              <div>
+                <div class="patient-name">{{ case.patient_name }}</div>
+                <div class="patient-id">{{ case.patient_id|default:"No ID" }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ case.age|default:"--" }} / {{ case.get_gender_display|default:"--" }}</td>
+          <td>{{ case.specialty_context|default:"General" }}</td>
+          <td class="complaint-cell">{{ case.chief_complaint|truncatechars:55|default:"Not specified" }}</td>
+          <td>{{ case.scans.count }}</td>
+          <td>
+            {% if case.report %}
+              {% if case.report.status == "complete" %}
+              <span class="status-badge status-complete">Complete</span>
+              {% elif case.report.status == "processing" %}
+              <span class="status-badge status-processing">Processing</span>
+              {% else %}
+              <span class="status-badge status-error">Error</span>
+              {% endif %}
+            {% else %}
+            <span class="status-badge status-pending">Pending</span>
+            {% endif %}
+          </td>
+          <td class="date-cell">{{ case.created_at|date:"M d, Y" }}</td>
+          <td>
+            <div class="action-btns">
+              <a href="{% url 'case_detail' case.id %}" class="btn btn-sm btn-outline" aria-label="View case {{ case.id }}">View</a>
+              {% if case.report and case.report.status == "complete" %}
+              <a href="{% url 'report_view' case.id %}" class="btn btn-sm btn-primary" aria-label="View report for case {{ case.id }}">Report</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <h2>No cases yet</h2>
+    <p>Create your first patient case to get started with AI medical analysis.</p>
+    <a href="{% url 'new_case' %}" class="btn btn-primary" id="empty-new-case-btn">Create First Case</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
