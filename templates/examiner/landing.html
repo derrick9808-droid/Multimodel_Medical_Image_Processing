@@ -1,0 +1,54 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}EduExaminer — Welcome{% endblock %}
+
+{% block content %}
+<div class="edu-landing">
+  <div class="edu-landing-hero">
+    <div class="edu-landing-badge">
+      <span class="edu-pulse-dot"></span>
+      Online MCQ Examination Platform
+    </div>
+    <h1 class="edu-landing-title">Welcome to <span class="edu-brand-accent">EduExaminer</span></h1>
+    <p class="edu-landing-sub">A secure, structured MCQ examination system for students and teachers.</p>
+  </div>
+
+  <div class="edu-role-cards">
+    <!-- Student card -->
+    <div class="edu-role-card" tabindex="0">
+      <div class="edu-role-icon edu-role-icon--student" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+        </svg>
+      </div>
+      <h2 class="edu-role-title">I'm a Student</h2>
+      <p class="edu-role-desc">Sign in with your email, password, and register number to access your scheduled exams.</p>
+      <a href="{% url 'examiner:student_login' %}" class="edu-btn edu-btn-outline edu-btn-full">
+        Student Sign In
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+
+    <!-- Teacher card -->
+    <div class="edu-role-card" tabindex="0">
+      <div class="edu-role-icon edu-role-icon--teacher" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </div>
+      <h2 class="edu-role-title">I'm a Teacher</h2>
+      <p class="edu-role-desc">Sign in to manage questions, configure exams, set schedules, and track student performance.</p>
+      <a href="{% url 'examiner:teacher_login' %}" class="edu-btn edu-btn-coral edu-btn-full">
+        Teacher Sign In
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <p class="edu-demo-note">
+    <strong>Demo credentials —</strong>
+    Teacher: <code>teacher@edu.example</code> / <code>teach123</code> &nbsp;|&nbsp;
+    Student: <code>student1@edu.example</code> / <code>student123</code> / Reg: <code>REG2024001</code>
+  </p>
+</div>
+{% endblock %}
+

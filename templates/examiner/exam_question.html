@@ -1,0 +1,85 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}Question {{ question_number }} of {{ total_questions }} — EduExaminer{% endblock %}
+
+{% block nav_extra %}
+{# Countdown timer — driven by examiner.js startCountdownTimer() #}
+<div class="edu-nav-timer" aria-label="Time remaining" role="timer">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  <span id="edu-countdown"
+        data-attempt-id="{{ attempt.pk }}"
+        data-duration-min="{{ exam.duration_minutes }}"
+        data-finish-url="{% url 'examiner:exam_finish' attempt_id=attempt.pk %}">
+    {{ exam.duration_minutes }}:00
+  </span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="edu-container edu-container--narrow">
+
+  {# Progress indicator (CO2 — loop position) #}
+  <div class="edu-progress-bar-wrap" aria-label="Progress: question {{ question_number }} of {{ total_questions }}">
+    <div class="edu-progress-track">
+      <div class="edu-progress-fill"
+           style="width: {% widthratio question_number total_questions 100 %}%">
+      </div>
+    </div>
+    <span class="edu-progress-label">Question {{ question_number }} of {{ total_questions }}</span>
+  </div>
+
+  <div class="edu-question-container">
+    <p class="edu-question-number" aria-label="Question {{ question_number }} of {{ total_questions }}">
+      Q{{ question_number }} / {{ total_questions }}
+    </p>
+
+    <p class="edu-question-text" id="question-text">{{ question.question_text }}</p>
+
+    {% if error %}
+    <p class="edu-inline-error" role="alert">{{ error }}</p>
+    {% endif %}
+
+    {# Answer form — CO4: saveStudentAnswer via record_answer() on POST #}
+    <form id="edu-answer-form"
+          method="post"
+          action="{% url 'examiner:exam_question' attempt_id=attempt.pk index=question_index %}">
+      {% csrf_token %}
+
+      {# CO2: iterate over options list; CO3: options stored as array #}
+      <fieldset class="edu-options-fieldset">
+        <legend class="visually-hidden">Select your answer for question {{ question_number }}</legend>
+        <ul class="edu-options-list" role="list">
+          {% for opt in question.options %}
+          <li class="edu-option-item">
+            <label class="edu-option-label">
+              <input type="radio"
+                     name="selected_option"
+                     value="{{ opt.id }}"
+                     class="edu-option-radio"
+                     {% if current_answer == opt.id %}checked{% endif %}
+                     aria-label="Option {{ opt.id }}: {{ opt.text }}" />
+              <span class="edu-option-id" aria-hidden="true">{{ opt.id }}</span>
+              <span class="edu-option-text">{{ opt.text }}</span>
+            </label>
+          </li>
+          {% endfor %}
+        </ul>
+      </fieldset>
+
+      <div class="edu-question-footer">
+        {# Continue is disabled until an answer is selected (enabled by JS) #}
+        <button type="submit"
+                id="edu-continue-btn"
+                class="edu-btn edu-btn-coral"
+                {% if not current_answer %}disabled aria-disabled="true"{% endif %}>
+          {% if question_number == total_questions %}
+            Finish Exam
+          {% else %}
+            Continue →
+          {% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}Teacher Dashboard — EduExaminer{% endblock %}
+
+{% block content %}
+<div class="edu-container">
+  <div class="edu-page-header">
+    <div>
+      <p class="edu-breadcrumb">Teacher Dashboard</p>
+      <h1 class="edu-page-title">Welcome, {{ teacher.display_name }}</h1>
+      <p class="edu-page-sub">Manage questions, configure exams, and track student results.</p>
+    </div>
+    <div class="edu-page-actions">
+      <a href="{% url 'examiner:question_add' %}" class="edu-btn edu-btn-outline">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Question
+      </a>
+      <a href="{% url 'examiner:exam_create' %}" class="edu-btn edu-btn-coral">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Exam
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="edu-stats-row">
+    <div class="edu-stat-card">
+      <div class="edu-stat-icon edu-stat-icon--navy" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <div>
+        <div class="edu-stat-value">{{ subjects|length }}</div>
+        <div class="edu-stat-label">Subjects</div>
+      </div>
+    </div>
+    <div class="edu-stat-card">
+      <div class="edu-stat-icon edu-stat-icon--sky" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div>
+        <div class="edu-stat-value">{{ total_questions }}</div>
+        <div class="edu-stat-label">Total Questions</div>
+      </div>
+    </div>
+    <div class="edu-stat-card">
+      <div class="edu-stat-icon edu-stat-icon--coral" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div>
+        <div class="edu-stat-value">{{ exams|length }}</div>
+        <div class="edu-stat-label">Exams Configured</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subject overview -->
+  <div class="edu-section">
+    <h2 class="edu-section-title">Subjects &amp; Question Banks</h2>
+    {% if subjects %}
+    <div class="edu-cards-grid">
+      {% for subj in subjects %}
+      <div class="edu-card">
+        <div class="edu-card-header">
+          <h3 class="edu-card-title">{{ subj.name }}</h3>
+          <span class="edu-badge edu-badge--navy">{{ subj.questions.count }} Q</span>
+        </div>
+        {% if subj.description %}<p class="edu-card-desc">{{ subj.description }}</p>{% endif %}
+        <div class="edu-card-actions">
+          <a href="{% url 'examiner:question_list' %}?subject={{ subj.pk }}" class="edu-btn edu-btn-outline edu-btn-sm">View Questions</a>
+          <a href="{% url 'examiner:question_add' %}?subject={{ subj.pk }}" class="edu-btn edu-btn-ghost edu-btn-sm">+ Add</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="edu-empty">No subjects yet. Questions will create subjects automatically.</div>
+    {% endif %}
+  </div>
+
+  <!-- Exam overview -->
+  <div class="edu-section">
+    <div class="edu-section-header">
+      <h2 class="edu-section-title">Exam Configurations</h2>
+      <a href="{% url 'examiner:exam_list' %}" class="edu-link">View all →</a>
+    </div>
+    {% if exams %}
+    <div class="edu-table-wrap">
+      <table class="edu-table" role="grid">
+        <thead>
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Subject</th>
+            <th scope="col">Questions</th>
+            <th scope="col">Duration</th>
+            <th scope="col">Status</th>
+            <th scope="col">Window</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exam in exams %}
+          <tr>
+            <td class="edu-td-name">{{ exam.title }}</td>
+            <td>{{ exam.subject.name }}</td>
+            <td>{{ exam.num_questions }}</td>
+            <td>{{ exam.duration_minutes }} min</td>
+            <td>
+              <span class="edu-status-badge edu-status--{{ exam.status }}">
+                {{ exam.get_status_display }}
+              </span>
+            </td>
+            <td class="edu-td-small">{{ exam.start_datetime|date:"M d H:i" }} – {{ exam.end_datetime|date:"M d H:i" }}</td>
+            <td><a href="{% url 'examiner:exam_detail' pk=exam.pk %}" class="edu-link">Details →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="edu-empty">No exams configured yet. <a href="{% url 'examiner:exam_create' %}">Create one →</a></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

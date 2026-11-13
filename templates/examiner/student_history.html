@@ -1,0 +1,102 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}My Exam History — EduExaminer{% endblock %}
+
+{% block nav_extra %}
+<span class="edu-nav-user">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+  {{ student.display_name }}
+  <span class="edu-nav-reg">({{ student.register_number }})</span>
+</span>
+{% endblock %}
+
+{% block content %}
+<div class="edu-container">
+
+  <div class="edu-page-header">
+    <div>
+      <a href="{% url 'examiner:student_menu' %}" class="edu-breadcrumb">← Back to Exam Menu</a>
+      <h1 class="edu-page-title">My Exam History</h1>
+      <p class="edu-page-sub">A record of all your past examination attempts.</p>
+    </div>
+  </div>
+
+  {% if attempts %}
+  <div class="edu-table-wrap">
+    <table class="edu-table" role="grid">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Exam</th>
+          <th scope="col">Subject</th>
+          <th scope="col">Date</th>
+          <th scope="col">Score</th>
+          <th scope="col">Percentage</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      {# CO2: iterate through the attempts list #}
+      <tbody>
+        {% for att in attempts %}
+        <tr>
+          <td class="edu-td-small">{{ forloop.counter }}</td>
+          <td class="edu-td-name">{{ att.exam.title }}</td>
+          <td>{{ att.exam.subject.name }}</td>
+          <td class="edu-td-small">
+            {{ att.start_time|date:"M d, Y" }}<br>
+            <span style="opacity:.7;">{{ att.start_time|date:"H:i" }}</span>
+          </td>
+          <td>
+            {% if att.score is not None %}
+              <strong>{{ att.score }}</strong> / {{ att.total_questions }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            {% if att.score is not None and att.total_questions %}
+              <div class="edu-pct-bar-wrap" aria-label="{% widthratio att.score att.total_questions 100 %}%">
+                <div class="edu-pct-bar">
+                  <div class="edu-pct-fill" style="width:{% widthratio att.score att.total_questions 100 %}%"></div>
+                </div>
+                <span class="edu-pct-label">{% widthratio att.score att.total_questions 100 %}%</span>
+              </div>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            <span class="edu-status-badge edu-status--{{ att.status }}">
+              {{ att.get_status_display }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {# Summary stats #}
+  <div class="edu-history-summary">
+    <div class="edu-history-stat">
+      <span class="edu-history-stat-num">{{ attempts|length }}</span>
+      <span class="edu-history-stat-label">Total Attempts</span>
+    </div>
+    {% if best_score %}
+    <div class="edu-history-stat">
+      <span class="edu-history-stat-num">{{ best_score.score }}/{{ best_score.total_questions }}</span>
+      <span class="edu-history-stat-label">Best Score</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <div class="edu-empty edu-empty--center">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    <p>You haven't completed any exams yet.</p>
+    <a href="{% url 'examiner:student_menu' %}" class="edu-btn edu-btn-coral">Browse Available Exams</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+

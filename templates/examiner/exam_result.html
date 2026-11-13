@@ -1,0 +1,106 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}Examination Finished — EduExaminer{% endblock %}
+
+{% block content %}
+<div class="edu-container edu-container--narrow">
+  <div class="edu-result">
+
+    {# ── Time taken (near top as required) ─────────────────────── #}
+    {% if elapsed_seconds is not None %}
+    <div class="edu-result-timer" aria-label="Time taken">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Time taken: <strong id="edu-elapsed" data-seconds="{{ elapsed_seconds }}">{{ elapsed_seconds }}s</strong>
+    </div>
+    {% endif %}
+
+    {# ── Prominent "Well Done" / status icon ───────────────────── #}
+    <div class="edu-result-icon" aria-hidden="true">
+      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+
+    <h1 class="edu-well-done">Well Done!</h1>
+    <p class="edu-result-subtitle">Examination Finished</p>
+    <p class="edu-result-name">
+      {{ student.display_name }}
+      <span class="edu-result-reg">({{ student.register_number }})</span>
+    </p>
+
+    {# ── Main score card ──────────────────────────────────────────── #}
+    <div class="edu-score-card" aria-label="Your score">
+      {% if attempt.score is not None %}
+      <div class="edu-score-num">{{ attempt.score }} / {{ attempt.total_questions }}</div>
+      <div class="edu-score-label">Correct Answers</div>
+      <div class="edu-score-pct">{% widthratio attempt.score attempt.total_questions 100 %}%</div>
+      {% else %}
+      <div class="edu-score-num">—</div>
+      <div class="edu-score-label">Score not yet available</div>
+      {% endif %}
+    </div>
+
+    {# ── Detailed breakdown (CO2: iterate; CO4: evaluateAttempt result) #}
+    {% if breakdown %}
+    <div class="edu-score-breakdown" aria-label="Score breakdown">
+      <div class="edu-breakdown-item edu-breakdown--correct">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        <span class="edu-breakdown-count">{{ breakdown.correct }}</span>
+        <span class="edu-breakdown-label">Correct</span>
+      </div>
+      <div class="edu-breakdown-item edu-breakdown--wrong">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span class="edu-breakdown-count">{{ breakdown.wrong }}</span>
+        <span class="edu-breakdown-label">Incorrect</span>
+      </div>
+      <div class="edu-breakdown-item edu-breakdown--skipped">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span class="edu-breakdown-count">{{ breakdown.unanswered }}</span>
+        <span class="edu-breakdown-label">Unanswered</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="edu-result-exam-info">
+      <strong>{{ exam.title }}</strong> &bull; {{ exam.subject.name }}
+      {% if attempt.status == "timed_out" %}
+      <span class="edu-status-badge edu-status--timed_out" style="margin-left:8px;">Time Expired</span>
+      {% endif %}
+    </div>
+
+    {# ── Past attempts link ───────────────────────────────────────── #}
+    <div class="edu-result-history-link">
+      <a href="{% url 'examiner:student_history' %}" class="edu-link">
+        View all my past exams →
+      </a>
+    </div>
+
+    {# ── Log Out (bottom, as specified) ──────────────────────────── #}
+    <div class="edu-result-actions">
+      <a href="{% url 'examiner:logout' %}" class="edu-btn edu-btn-coral">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Log Out &amp; Return Home
+      </a>
+    </div>
+
+    <p class="edu-result-note">
+      Your answers have been saved. Refreshing this page will not change your score.
+    </p>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  /* CO4: displayResult — format elapsed seconds as HH:MM:SS */
+  (function displayResult() {
+    var el = document.getElementById("edu-elapsed");
+    if (!el) return;
+    var sec = parseInt(el.dataset.seconds || "0", 10);
+    var h = Math.floor(sec / 3600);
+    var m = Math.floor((sec % 3600) / 60);
+    var s = sec % 60;
+    el.textContent = [h, m, s].map(function (v) {
+      return String(v).padStart(2, "0");
+    }).join(":");
+  })();
+</script>
+{% endblock %}

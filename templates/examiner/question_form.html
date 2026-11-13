@@ -1,0 +1,148 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}{% if mode == 'edit' %}Edit Question{% else %}Add Question{% endif %} — EduExaminer{% endblock %}
+
+{% block extra_head %}
+<style>
+  .options-builder { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+  .option-row { display:grid; grid-template-columns:60px 1fr auto; gap:8px; align-items:center; }
+  .option-row input[type=text] { width:100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edu-container edu-container--narrow">
+  <div class="edu-page-header">
+    <div>
+      <a href="{% url 'examiner:question_list' %}" class="edu-breadcrumb">← Question Bank</a>
+      <h1 class="edu-page-title">{% if mode == 'edit' %}Edit Question{% else %}Add New Question{% endif %}</h1>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="edu-inline-error" role="alert">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ error }}
+  </div>
+  {% endif %}
+
+  <div class="edu-card edu-card--form">
+    <form method="post" novalidate id="question-form">
+      {% csrf_token %}
+
+      <div class="edu-form-group">
+        <label for="subject_id" class="edu-label">Subject <span class="edu-required">*</span></label>
+        <select id="subject_id" name="subject_id" class="edu-select" required>
+          <option value="">— Select subject —</option>
+          {% for s in subjects %}
+          <option value="{{ s.pk }}"
+            {% if question and question.subject_id == s.pk %}selected
+            {% elif request.GET.subject == s.pk|stringformat:"s" %}selected
+            {% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="edu-form-group">
+        <label for="question_text" class="edu-label">Question Text <span class="edu-required">*</span></label>
+        <textarea id="question_text" name="question_text" class="edu-textarea" rows="3"
+                  placeholder="Enter the question…" required>{% if question %}{{ question.question_text }}{% endif %}</textarea>
+      </div>
+
+      <div class="edu-form-group">
+        <label class="edu-label">Answer Options <span class="edu-required">*</span> <span class="edu-label-hint">(min 2)</span></label>
+        <div class="options-builder" id="options-builder">
+          {% if question %}
+            {% for opt in question.options %}
+            <div class="option-row">
+              <input type="text" name="option_id_{{ forloop.counter0 }}" value="{{ opt.id }}"
+                     class="edu-input" placeholder="ID" aria-label="Option ID {{ forloop.counter }}" maxlength="5" />
+              <input type="text" name="option_text_{{ forloop.counter0 }}" value="{{ opt.text }}"
+                     class="edu-input" placeholder="Option text…" aria-label="Option text {{ forloop.counter }}" />
+              <button type="button" class="edu-btn edu-btn-danger edu-btn-sm" onclick="removeOption(this)" aria-label="Remove option">✕</button>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="option-row">
+              <input type="text" name="option_id_0" value="A" class="edu-input" placeholder="ID" aria-label="Option ID 1" maxlength="5" />
+              <input type="text" name="option_text_0" class="edu-input" placeholder="Option A text…" aria-label="Option text 1" />
+              <button type="button" class="edu-btn edu-btn-danger edu-btn-sm" onclick="removeOption(this)" aria-label="Remove option">✕</button>
+            </div>
+            <div class="option-row">
+              <input type="text" name="option_id_1" value="B" class="edu-input" placeholder="ID" aria-label="Option ID 2" maxlength="5" />
+              <input type="text" name="option_text_1" class="edu-input" placeholder="Option B text…" aria-label="Option text 2" />
+              <button type="button" class="edu-btn edu-btn-danger edu-btn-sm" onclick="removeOption(this)" aria-label="Remove option">✕</button>
+            </div>
+          {% endif %}
+        </div>
+        <button type="button" class="edu-btn edu-btn-outline edu-btn-sm" onclick="addOption()" id="add-option-btn">
+          + Add Option
+        </button>
+      </div>
+
+      <div class="edu-form-group">
+        <label for="correct_option" class="edu-label">Correct Option ID <span class="edu-required">*</span></label>
+        <input type="text" id="correct_option" name="correct_option" class="edu-input edu-input--narrow"
+               value="{% if question %}{{ question.correct_option }}{% endif %}"
+               placeholder="e.g. A" maxlength="5" required />
+        <span class="edu-field-hint">Must match one of the Option IDs above exactly.</span>
+      </div>
+
+      <div class="edu-form-group">
+        <label for="explanation" class="edu-label">Explanation <span class="edu-label-hint">(optional, shown after exam)</span></label>
+        <textarea id="explanation" name="explanation" class="edu-textarea" rows="2"
+                  placeholder="Why is this answer correct?">{% if question %}{{ question.explanation }}{% endif %}</textarea>
+      </div>
+
+      <div class="edu-form-actions">
+        <a href="{% url 'examiner:question_list' %}" class="edu-btn edu-btn-ghost">Cancel</a>
+        <button type="submit" class="edu-btn edu-btn-coral">
+          {% if mode == 'edit' %}Save Changes{% else %}Add Question{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  let optionCount = document.querySelectorAll('.option-row').length;
+
+  function addOption() {
+    const builder = document.getElementById('options-builder');
+    const row = document.createElement('div');
+    row.className = 'option-row';
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const suggestedId = letters[optionCount] || String(optionCount + 1);
+    row.innerHTML = `
+      <input type="text" name="option_id_${optionCount}" value="${suggestedId}"
+             class="edu-input" placeholder="ID" aria-label="Option ID ${optionCount+1}" maxlength="5" />
+      <input type="text" name="option_text_${optionCount}" class="edu-input"
+             placeholder="Option text…" aria-label="Option text ${optionCount+1}" />
+      <button type="button" class="edu-btn edu-btn-danger edu-btn-sm"
+              onclick="removeOption(this)" aria-label="Remove option">✕</button>
+    `;
+    builder.appendChild(row);
+    optionCount++;
+    row.querySelector('input[type=text]').focus();
+  }
+
+  function removeOption(btn) {
+    const rows = document.querySelectorAll('.option-row');
+    if (rows.length <= 2) {
+      alert('A question must have at least two options.');
+      return;
+    }
+    btn.closest('.option-row').remove();
+    // Re-index names
+    document.querySelectorAll('.option-row').forEach((row, i) => {
+      row.querySelectorAll('input').forEach((inp, j) => {
+        const field = j === 0 ? 'option_id' : 'option_text';
+        inp.name = `${field}_${i}`;
+      });
+    });
+    optionCount = document.querySelectorAll('.option-row').length;
+  }
+</script>
+{% endblock %}
+

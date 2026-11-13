@@ -1,0 +1,109 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}{{ exam.title }} — EduExaminer{% endblock %}
+
+{% block content %}
+<div class="edu-container">
+  <div class="edu-page-header">
+    <div>
+      <a href="{% url 'examiner:exam_list' %}" class="edu-breadcrumb">← Exams</a>
+      <h1 class="edu-page-title">{{ exam.title }}</h1>
+      <p class="edu-page-sub">{{ exam.subject.name }}</p>
+    </div>
+    <div class="edu-page-actions">
+      <span class="edu-status-badge edu-status--{{ exam.status }}">{{ exam.get_status_display }}</span>
+    </div>
+  </div>
+
+  {# Exam meta #}
+  <div class="edu-cards-grid" style="margin-bottom:32px;">
+    <div class="edu-stat-card">
+      <div class="edu-stat-icon edu-stat-icon--navy" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <div>
+        <div class="edu-stat-value">{{ exam.num_questions }}</div>
+        <div class="edu-stat-label">Questions</div>
+      </div>
+    </div>
+    <div class="edu-stat-card">
+      <div class="edu-stat-icon edu-stat-icon--sky" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div>
+        <div class="edu-stat-value">{{ exam.duration_minutes }}</div>
+        <div class="edu-stat-label">Minutes</div>
+      </div>
+    </div>
+    <div class="edu-stat-card">
+      <div class="edu-stat-icon edu-stat-icon--coral" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div>
+        <div class="edu-stat-value">{{ attempts|length }}</div>
+        <div class="edu-stat-label">Attempts</div>
+      </div>
+    </div>
+  </div>
+
+  {# Status control #}
+  <div class="edu-section">
+    <h2 class="edu-section-title">Change Status</h2>
+    <div class="edu-status-controls">
+      {% for val, label in exam.STATUS_CHOICES %}
+      <form method="post" action="{% url 'examiner:exam_status_update' pk=exam.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="status" value="{{ val }}" />
+        <button type="submit"
+                class="edu-btn edu-btn-sm {% if exam.status == val %}edu-btn-coral{% else %}edu-btn-outline{% endif %}"
+                {% if exam.status == val %}aria-current="true"{% endif %}>
+          {{ label }}
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+    <p class="edu-hint">Window: {{ exam.start_datetime|date:"M d, Y H:i" }} – {{ exam.end_datetime|date:"M d, Y H:i" }}</p>
+    <p class="edu-hint">Shuffle: {% if exam.shuffle_questions %}Yes{% else %}No{% endif %}</p>
+  </div>
+
+  {# Attempts table #}
+  <div class="edu-section">
+    <h2 class="edu-section-title">Student Attempts</h2>
+    {% if attempts %}
+    <div class="edu-table-wrap">
+      <table class="edu-table" role="grid">
+        <thead>
+          <tr>
+            <th scope="col">Student</th>
+            <th scope="col">Register No.</th>
+            <th scope="col">Started</th>
+            <th scope="col">Status</th>
+            <th scope="col">Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for att in attempts %}
+          <tr>
+            <td class="edu-td-name">{{ att.student.display_name }}</td>
+            <td>{{ att.student.register_number }}</td>
+            <td class="edu-td-small">{{ att.start_time|date:"M d, H:i" }}</td>
+            <td><span class="edu-status-badge edu-status--{{ att.status }}">{{ att.get_status_display }}</span></td>
+            <td>
+              {% if att.score is not None %}
+                {{ att.score }} / {{ att.total_questions }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="edu-empty">No attempts yet.</div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+

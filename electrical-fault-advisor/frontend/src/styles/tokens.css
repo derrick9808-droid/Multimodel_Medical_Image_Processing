@@ -1,0 +1,100 @@
+/**
+ * Design Tokens: "Playful Twilight" Palette
+ * Strict 4-Color Base + Derived Tokens via color-mix()
+ * 
+ * Base Colors:
+ * - Blush: #F6E8EA
+ * - Coral: #EF626C
+ * - Ink:   #22181C
+ * - Mint:  #59C9A5
+ */
+
+:root {
+  /* Core Raw Palette */
+  --raw-blush: #F6E8EA;
+  --raw-coral: #EF626C;
+  --raw-ink:   #22181C;
+  --raw-mint:  #59C9A5;
+
+  /* Semantic Core Colors */
+  --color-blush: var(--raw-blush);
+  --color-coral: var(--raw-coral);
+  --color-ink:   var(--raw-ink);
+  --color-mint:  var(--raw-mint);
+
+  /* Derived Surface and Text Tokens */
+  --bg-page: var(--color-blush);
+  --bg-card: color-mix(in srgb, var(--color-blush) 92%, white 8%);
+  --bg-card-muted: color-mix(in srgb, var(--color-blush) 85%, var(--color-ink) 15%);
+  --bg-dark: var(--color-ink);
+  --bg-dark-surface: color-mix(in srgb, var(--color-ink) 90%, var(--color-blush) 10%);
+  
+  --text-main: var(--color-ink);
+  --text-muted: color-mix(in srgb, var(--color-ink) 72%, var(--color-blush) 28%);
+  --text-on-dark: var(--color-blush);
+  --text-on-dark-muted: color-mix(in srgb, var(--color-blush) 75%, var(--color-ink) 25%);
+
+  /* Border Tokens */
+  --border-subtle: color-mix(in srgb, var(--color-ink) 14%, var(--color-blush) 86%);
+  --border-medium: color-mix(in srgb, var(--color-ink) 35%, var(--color-blush) 65%);
+  --border-heavy:  var(--color-ink);
+  --border-dark:   color-mix(in srgb, var(--color-blush) 20%, var(--color-ink) 80%);
+
+  /* Tints */
+  --coral-tint-15: color-mix(in srgb, var(--color-coral) 15%, var(--color-blush) 85%);
+  --coral-tint-25: color-mix(in srgb, var(--color-coral) 25%, var(--color-blush) 75%);
+  --mint-tint-18:  color-mix(in srgb, var(--color-mint) 18%, var(--color-blush) 82%);
+  --mint-tint-30:  color-mix(in srgb, var(--color-mint) 30%, var(--color-blush) 70%);
+  --ink-tint-8:    color-mix(in srgb, var(--color-ink) 8%, var(--color-blush) 92%);
+
+  /* Alert Level Tokens (Strict WCAG AA) */
+  /* ADVISORY: Mint fill with ink text */
+  --alert-advisory-bg: var(--color-mint);
+  --alert-advisory-text: var(--color-ink);
+  --alert-advisory-border: color-mix(in srgb, var(--color-mint) 70%, var(--color-ink) 30%);
+
+  /* WARNING: Coral tint with ink border and ink text */
+  --alert-warning-bg: var(--coral-tint-25);
+  --alert-warning-text: var(--color-ink);
+  --alert-warning-border: var(--color-ink);
+
+  /* CRITICAL: Solid Coral fill with ink text and heavy border */
+  --alert-critical-bg: var(--color-coral);
+  --alert-critical-text: var(--color-ink);
+  --alert-critical-border: var(--color-ink);
+
+  /* UNCERTAIN: Ink fill with blush text */
+  --alert-uncertain-bg: var(--color-ink);
+  --alert-uncertain-text: var(--color-blush);
+  --alert-uncertain-border: var(--color-ink);
+
+  /* Focus and Active States */
+  --focus-ring: 3px solid var(--color-coral);
+  --focus-offset: 2px;
+  --active-indicator: var(--color-coral);
+
+  /* Typography & Layout Scale */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px color-mix(in srgb, var(--color-ink) 8%, transparent);
+  --shadow-md: 0 4px 12px color-mix(in srgb, var(--color-ink) 12%, transparent);
+  --shadow-lg: 0 10px 24px color-mix(in srgb, var(--color-ink) 16%, transparent);
+
+  --transition-fast: 180ms ease;
+  --transition-base: 220ms ease;
+  --max-width: 1100px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+  }
+}
+

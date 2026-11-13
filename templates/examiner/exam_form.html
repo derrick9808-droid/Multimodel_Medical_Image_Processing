@@ -1,0 +1,82 @@
+{% extends "examiner/base_examiner.html" %}
+{% load static %}
+{% block title %}{% if exam %}Edit Exam{% else %}Create Exam{% endif %} — EduExaminer{% endblock %}
+
+{% block content %}
+<div class="edu-container edu-container--narrow">
+  <div class="edu-page-header">
+    <div>
+      <a href="{% url 'examiner:exam_list' %}" class="edu-breadcrumb">← Exams</a>
+      <h1 class="edu-page-title">{% if exam %}Edit Exam{% else %}Create New Exam{% endif %}</h1>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="edu-alert edu-alert-error" role="alert">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  <form method="post" class="edu-form-card" novalidate>
+    {% csrf_token %}
+
+    <div class="edu-form-group">
+      <label class="edu-label" for="id_subject">Subject <span aria-hidden="true">*</span></label>
+      <select id="id_subject" name="subject_id" class="edu-select" required>
+        <option value="">— Select subject —</option>
+        {% for s in subjects %}
+        <option value="{{ s.pk }}" {% if exam and exam.subject.pk == s.pk %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="edu-form-group">
+      <label class="edu-label" for="id_title">Exam Title <span aria-hidden="true">*</span></label>
+      <input id="id_title" type="text" name="title" class="edu-input"
+             value="{{ exam.title|default:'' }}" placeholder="e.g. CS Midterm 2026" required />
+    </div>
+
+    <div class="edu-form-row">
+      <div class="edu-form-group">
+        <label class="edu-label" for="id_num_q">Number of Questions <span aria-hidden="true">*</span></label>
+        <input id="id_num_q" type="number" name="num_questions" class="edu-input"
+               value="{{ exam.num_questions|default:10 }}" min="1" required />
+      </div>
+      <div class="edu-form-group">
+        <label class="edu-label" for="id_duration">Duration (minutes) <span aria-hidden="true">*</span></label>
+        <input id="id_duration" type="number" name="duration_minutes" class="edu-input"
+               value="{{ exam.duration_minutes|default:30 }}" min="1" required />
+      </div>
+    </div>
+
+    <div class="edu-form-group edu-form-check">
+      <input id="id_shuffle" type="checkbox" name="shuffle_questions"
+             {% if exam and exam.shuffle_questions or not exam %}checked{% endif %}
+             class="edu-checkbox" />
+      <label class="edu-label" for="id_shuffle">Shuffle question order for each student</label>
+    </div>
+
+    <div class="edu-form-row">
+      <div class="edu-form-group">
+        <label class="edu-label" for="id_start">Start Date &amp; Time <span aria-hidden="true">*</span></label>
+        <input id="id_start" type="datetime-local" name="start_datetime" class="edu-input"
+               value="{{ exam.start_datetime|date:'Y-m-d\TH:i'|default:'' }}" required />
+      </div>
+      <div class="edu-form-group">
+        <label class="edu-label" for="id_end">End Date &amp; Time <span aria-hidden="true">*</span></label>
+        <input id="id_end" type="datetime-local" name="end_datetime" class="edu-input"
+               value="{{ exam.end_datetime|date:'Y-m-d\TH:i'|default:'' }}" required />
+      </div>
+    </div>
+
+    <div class="edu-form-actions">
+      <a href="{% url 'examiner:exam_list' %}" class="edu-btn edu-btn-outline">Cancel</a>
+      <button type="submit" class="edu-btn edu-btn-coral">
+        {% if exam %}Save Changes{% else %}Create Exam{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+

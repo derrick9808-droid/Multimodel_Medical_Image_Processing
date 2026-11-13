@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkyRoute - Autonomous 3D Drone Delivery Simulator</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Three.js & OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+  <!-- 3D Canvas Viewport -->
+  <div id="canvas-container"></div>
+
+  <!-- UI HUD & Controls Overlay -->
+  <div id="ui-overlay">
+    <!-- Top Bar -->
+    <header class="top-bar glass-panel interactive">
+      <div class="brand-section">
+        <div class="logo-badge">🚁</div>
+        <div>
+          <h1 class="brand-title">SkyRoute 3D</h1>
+          <p class="brand-subtitle">Autonomous Drone Delivery</p>
+        </div>
+      </div>
+
+      <!-- Center Tool Selection Group -->
+      <div class="tool-selector-group">
+        <button class="tool-btn" data-tool="place-package" title="Place Package Start Point">
+          <span class="btn-icon">📦</span>
+          <span>Place Package</span>
+        </button>
+        <button class="tool-btn" data-tool="place-target" title="Place Delivery Target">
+          <span class="btn-icon">🎯</span>
+          <span>Place Drop-off</span>
+        </button>
+        <button class="tool-btn active" data-tool="add-building" title="Add Buildings Between Drone & Target">
+          <span class="btn-icon">🏢</span>
+          <span>Add Building</span>
+        </button>
+        <button class="tool-btn" data-tool="select" title="Inspect, Resize or Delete Buildings">
+          <span class="btn-icon">✋</span>
+          <span>Select / Delete</span>
+        </button>
+      </div>
+
+      <!-- Right Action Controls -->
+      <div class="top-actions">
+        <div class="scenario-selector">
+          <select id="scenario-select" class="setting-select" title="Load Preset Scenario">
+            <option value="canyons">🏙️ Urban Canyons</option>
+            <option value="wall">🏢 Skyscraper Wall</option>
+            <option value="maze">🌀 Maze Challenge</option>
+            <option value="suburb">🏡 Suburban Homes</option>
+            <option value="nofly">⛔ Restricted Airspace</option>
+            <option value="clean">⬜ Clean Sandbox</option>
+          </select>
+        </div>
+
+        <button id="btn-random-city" class="action-btn-sm" title="Generate Random Buildings">
+          <span>🎲</span>
+          <span>Randomize</span>
+        </button>
+        <button id="btn-clear-buildings" class="action-btn-sm danger" title="Clear All Buildings">
+          <span>🗑️</span>
+          <span>Clear Map</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Sub-bar: Building Palette (Visible when Add Building tool is active) -->
+    <div id="building-palette" class="glass-panel interactive">
+      <span class="palette-label">Preset:</span>
+      <div class="building-type-pill active" data-type="office">🏢 Office</div>
+      <div class="building-type-pill" data-type="skyscraper">🏙️ Skyscraper</div>
+      <div class="building-type-pill" data-type="megatower">🗼 Mega Tower</div>
+      <div class="building-type-pill" data-type="house">🏡 House</div>
+      <div class="building-type-pill" data-type="tower">📡 Radio Mast</div>
+      <div class="building-type-pill" data-type="noflyzone">⛔ No-Fly Zone</div>
+
+      <div class="height-slider-box">
+        <span>Height:</span>
+        <input type="range" id="building-height-input" min="10" max="110" step="5" value="35">
+        <span id="building-height-val">35m</span>
+      </div>
+    </div>
+
+    <!-- Floating Helper Tooltip -->
+    <div id="helper-tooltip">
+      <span id="tooltip-text">🏢 Click on the map to construct a building between start and target</span>
+    </div>
+
+    <!-- Middle Floating Sidebars -->
+    <div class="middle-container">
+      <!-- Left Panel: Live Telemetry & Mission Intel -->
+      <aside class="telemetry-panel glass-panel interactive">
+        <div class="panel-title-bar">
+          <span class="panel-title">📡 Drone Telemetry</span>
+          <span id="sim-status-badge" class="status-badge">Standby</span>
+        </div>
+
+        <div class="telemetry-grid">
+          <div class="stat-card">
+            <div class="stat-label">Ground Speed</div>
+            <div class="stat-value"><span id="telemetry-speed">0.0</span> <span class="stat-unit">km/h</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Altitude</div>
+            <div class="stat-value"><span id="telemetry-altitude">0.0</span> <span class="stat-unit">m</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Remaining Dist</div>
+            <div class="stat-value"><span id="telemetry-distance">0.0</span> <span class="stat-unit">m</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Estimated ETA</div>
+            <div class="stat-value"><span id="telemetry-eta">0.0</span></div>
+          </div>
+        </div>
+
+        <!-- Battery Bar Gauge -->
+        <div class="battery-wrapper">
+          <div class="battery-header">
+            <span>Battery Reserve</span>
+            <span id="telemetry-battery-val">100%</span>
+          </div>
+          <div class="battery-track">
+            <div id="telemetry-battery-bar" class="battery-fill"></div>
+          </div>
+        </div>
+
+        <!-- Real-Time Altitude Profile Chart -->
+        <div class="stat-label">Corridor Altitude Profile</div>
+        <div class="elevation-chart-container">
+          <canvas id="elevation-canvas" width="248" height="64"></canvas>
+        </div>
+
+        <!-- Live Mission Log -->
+        <div class="stat-label">Flight Log Events</div>
+        <div id="mission-log" class="mission-log-box"></div>
+      </aside>
+
+      <!-- Right Panel: Camera & Environment Navigation -->
+      <aside class="settings-panel glass-panel interactive">
+        <div class="panel-title-bar">
+          <span class="panel-title">🎥 Camera Angles</span>
+        </div>
+
+        <div class="cam-views-grid">
+          <button class="cam-btn active" data-view="orbit">🌐 Free Orbit</button>
+          <button class="cam-btn" data-view="chase">🚁 Chase Cam</button>
+          <button class="cam-btn" data-view="drone_pov">👁️ Drone POV</button>
+          <button class="cam-btn" data-view="topdown">🗺️ Top-Down</button>
+          <button class="cam-btn" data-view="isometric">📐 Isometric</button>
+        </div>
+
+        <div class="panel-title-bar" style="margin-top: 6px;">
+          <span class="panel-title">⚙️ Flight Profile</span>
+        </div>
+
+        <div class="setting-row">
+          <span>Path Algorithm:</span>
+          <select id="path-mode-select" class="setting-select">
+            <option value="balanced">Smart 3D Optimal</option>
+            <option value="canyon">Street Canyon (Low)</option>
+            <option value="flyover">Skyway Flyover (High)</option>
+            <option value="direct">Euclidean Shortest</option>
+          </select>
+        </div>
+
+        <div class="panel-title-bar" style="margin-top: 6px;">
+          <span class="panel-title">🌆 Environment & Wind</span>
+        </div>
+
+        <div class="setting-row">
+          <span>Lighting:</span>
+          <select id="time-of-day-select" class="setting-select">
+            <option value="day">☀️ Daylight</option>
+            <option value="sunset">🌅 Golden Hour</option>
+            <option value="night">🌙 Cyberpunk Night</option>
+          </select>
+        </div>
+
+        <div class="setting-row">
+          <span>Wind Speed:</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="range" id="wind-speed-slider" min="0" max="45" step="5" value="15" style="width: 70px;">
+            <span id="wind-speed-val" style="font-family: var(--font-mono); font-size: 0.72rem; color: #fff;">15 km/h</span>
+          </div>
+        </div>
+
+        <div class="panel-title-bar" style="margin-top: 6px;">
+          <span class="panel-title">🛡️ Visual Overlays</span>
+        </div>
+
+        <div class="overlay-toggles-row">
+          <label class="toggle-chip">
+            <input type="checkbox" id="toggle-safety-buffers">
+            <span>Safety Buffers</span>
+          </label>
+          <label class="toggle-chip">
+            <input type="checkbox" id="toggle-flight-tunnel" checked>
+            <span>Flight Tunnel</span>
+          </label>
+        </div>
+
+        <div class="setting-row" style="margin-top: 4px;">
+          <span>Sound Effects:</span>
+          <button id="btn-mute" class="action-btn-sm" style="padding: 4px 10px;">🔊 Audio On</button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Bottom Mission Control Dock -->
+    <footer class="bottom-dock glass-panel interactive">
+      <div class="dock-left-info">
+        <div class="info-pill">
+          <span>📦 Start: </span>
+          <strong>Package Depot</strong>
+        </div>
+        <div class="info-pill">
+          <span>🎯 Target: </span>
+          <strong>Delivery Pad</strong>
+        </div>
+      </div>
+
+      <!-- Center Launch Button Group -->
+      <div class="launch-button-group">
+        <button id="btn-launch" class="launch-btn">
+          <span>▶</span>
+          <span>Launch Delivery</span>
+        </button>
+        <button id="btn-reset" class="reset-btn" title="Reset Flight">
+          <span>↺ Reset</span>
+        </button>
+      </div>
+
+      <!-- Right Sim Speed Selector -->
+      <div class="speed-control-group">
+        <span class="palette-label">Speed:</span>
+        <button class="speed-btn" data-speed="0.5">0.5x</button>
+        <button class="speed-btn active" data-speed="1.0">1x</button>
+        <button class="speed-btn" data-speed="2.0">2x</button>
+        <button class="speed-btn" data-speed="4.0">4x</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Delivery Success Modal -->
+  <div id="completion-modal" class="modal-backdrop hidden interactive">
+    <div class="delivery-card glass-panel">
+      <div class="success-badge-icon">✓</div>
+      <h2 class="card-title">Delivery Successful!</h2>
+      <p class="card-subtitle">The parcel was securely lowered onto the target landing pad.</p>
+
+      <div class="mission-summary-grid">
+        <div class="summary-item">
+          <div class="summary-label">Flight Duration</div>
+          <div id="summary-time" class="summary-val">00:00</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">Corridor Distance</div>
+          <div id="summary-dist" class="summary-val">0.0m</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">Average Speed</div>
+          <div id="summary-speed" class="summary-val">0.0 km/h</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-label">Energy Consumed</div>
+          <div id="summary-energy" class="summary-val">0.0 Wh</div>
+        </div>
+      </div>
+
+      <button id="modal-close-btn" class="btn-primary">Acknowledge & Continue</button>
+    </div>
+  </div>
+
+  <!-- App Scripts in Dependency Order -->
+  <script src="js/audio.js"></script>
+  <script src="js/pathfinder.js"></script>
+  <script src="js/city.js"></script>
+  <script src="js/drone.js"></script>
+  <script src="js/simulation.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
+

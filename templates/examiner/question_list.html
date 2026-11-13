@@ -1,0 +1,84 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}Questions — EduExaminer{% endblock %}
+
+{% block content %}
+<div class="edu-container">
+  <div class="edu-page-header">
+    <div>
+      <a href="{% url 'examiner:teacher_dashboard' %}" class="edu-breadcrumb">← Dashboard</a>
+      <h1 class="edu-page-title">Question Bank</h1>
+    </div>
+    <a href="{% url 'examiner:question_add' %}" class="edu-btn edu-btn-coral">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Question
+    </a>
+  </div>
+
+  <!-- Filter bar -->
+  <form method="get" action="{% url 'examiner:question_list' %}" class="edu-filter-bar" role="search">
+    <div class="edu-form-group edu-form-inline">
+      <label for="subject-select" class="edu-label">Subject</label>
+      <select id="subject-select" name="subject" class="edu-select" onchange="this.form.submit()">
+        <option value="">— All Subjects —</option>
+        {% for s in subjects %}
+        <option value="{{ s.pk }}" {% if selected_subject and selected_subject.pk == s.pk %}selected{% endif %}>{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% if selected_subject %}
+    <div class="edu-form-group edu-form-inline">
+      <label for="q-search" class="edu-label">Search</label>
+      <input type="text" id="q-search" name="q" value="{{ query }}" class="edu-input" placeholder="Search questions…" />
+    </div>
+    <button type="submit" class="edu-btn edu-btn-outline edu-btn-sm">Search</button>
+    {% endif %}
+  </form>
+
+  {% if selected_subject %}
+  <div class="edu-section">
+    <div class="edu-section-header">
+      <h2 class="edu-section-title">{{ selected_subject.name }} <span class="edu-badge edu-badge--sky">{{ questions|length }} result{% if questions|length != 1 %}s{% endif %}</span></h2>
+    </div>
+
+    {% if questions %}
+    <div class="edu-question-list">
+      {% for q in questions %}
+      <div class="edu-question-card">
+        <div class="edu-question-body">
+          <span class="edu-question-num">Q{{ forloop.counter }}</span>
+          <p class="edu-question-text">{{ q.question_text }}</p>
+        </div>
+        <ul class="edu-options-preview" aria-label="Options for question {{ forloop.counter }}">
+          {% for opt in q.options %}
+          <li class="edu-option-item {% if opt.id == q.correct_option %}edu-option--correct{% endif %}">
+            <span class="edu-option-id">{{ opt.id }}</span>
+            <span class="edu-option-text">{{ opt.text }}</span>
+            {% if opt.id == q.correct_option %}
+            <svg class="edu-correct-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-label="Correct answer"><polyline points="20 6 9 17 4 12"/></svg>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="edu-question-actions">
+          <a href="{% url 'examiner:question_edit' pk=q.pk %}" class="edu-btn edu-btn-outline edu-btn-sm">Edit</a>
+          <form method="post" action="{% url 'examiner:question_delete' pk=q.pk %}"
+                onsubmit="return confirm('Delete this question? This cannot be undone.');">
+            {% csrf_token %}
+            <button type="submit" class="edu-btn edu-btn-danger edu-btn-sm">Delete</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="edu-empty">
+      {% if query %}No questions match "{{ query }}".{% else %}No questions in this subject yet. <a href="{% url 'examiner:question_add' %}?subject={{ selected_subject.pk }}">Add one →</a>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="edu-empty">Select a subject above to browse questions.</div>
+  {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}EduExaminer{% endblock %}</title>
+  <meta name="description" content="EduExaminer — Online MCQ Examination Platform" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'examiner/css/examiner.css' %}" />
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="edu-body">
+
+  <!-- Navigation -->
+  <nav class="edu-nav" role="navigation" aria-label="EduExaminer navigation">
+    <div class="edu-nav-inner">
+      <a href="{% url 'examiner:landing' %}" class="edu-brand" aria-label="EduExaminer home">
+        <div class="edu-brand-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="edu-brand-name">EduExaminer</span>
+      </a>
+
+      <div class="edu-nav-right">
+        {% block nav_extra %}{% endblock %}
+        {% if request.session.exam_user_id %}
+        <a href="{% url 'examiner:logout' %}" class="edu-btn edu-btn-ghost edu-btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log Out
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- Django flash messages -->
+  {% if messages %}
+  <div class="edu-messages" role="alert" aria-live="polite">
+    {% for message in messages %}
+    <div class="edu-alert edu-alert-{{ message.tags }}">
+      {% if message.tags == 'success' %}
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      {% else %}
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      {% endif %}
+      <span>{{ message }}</span>
+      <button class="edu-alert-close" onclick="this.parentElement.remove()" aria-label="Dismiss">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main id="edu-main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="edu-footer" role="contentinfo">
+    <div class="edu-footer-inner">
+      <span>EduExaminer &copy; 2026 &mdash; Prototype</span>
+      <span class="edu-footer-note">⚠ Demo credentials visible in source. Not for production use.</span>
+    </div>
+  </footer>
+
+  <script src="{% static 'examiner/js/examiner.js' %}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>
+

@@ -1,0 +1,84 @@
+{% extends "examiner/base_examiner.html" %}
+{% block title %}Examination Menu — EduExaminer{% endblock %}
+
+{% block nav_extra %}
+<span class="edu-nav-user">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+  {{ student.display_name }}
+  <span class="edu-nav-reg">({{ student.register_number }})</span>
+</span>
+<a href="{% url 'examiner:student_history' %}" class="edu-btn edu-btn-ghost edu-btn-sm">My History</a>
+{% endblock %}
+
+{% block content %}
+<div class="edu-container">
+  <div class="edu-page-header">
+    <div>
+      <p class="edu-breadcrumb">Student Portal</p>
+      <h1 class="edu-page-title">Examination Menu</h1>
+      <p class="edu-page-sub">Select an open exam to begin. Upcoming and closed exams are shown for reference.</p>
+    </div>
+  </div>
+
+  {% if all_exams %}
+  <div class="edu-exam-menu-grid">
+    {% for item in all_exams %}
+    {% with exam=item.exam %}
+    <div class="edu-exam-card {% if item.is_closed %}edu-exam-card--closed{% elif item.is_upcoming %}edu-exam-card--upcoming{% endif %}">
+      <div class="edu-exam-card-header">
+        <div>
+          <h2 class="edu-exam-card-title">{{ exam.title }}</h2>
+          <p class="edu-exam-card-subject">{{ exam.subject.name }}</p>
+        </div>
+        {% if item.is_open %}
+        <span class="edu-status-badge edu-status--published">Open</span>
+        {% elif item.is_upcoming %}
+        <span class="edu-status-badge edu-status--draft">Upcoming</span>
+        {% else %}
+        <span class="edu-status-badge edu-status--closed">Closed</span>
+        {% endif %}
+      </div>
+
+      <ul class="edu-exam-meta">
+        <li>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Duration: <strong>{{ exam.duration_minutes }} min</strong></span>
+        </li>
+        <li>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Questions: <strong>{{ exam.num_questions }}</strong></span>
+        </li>
+        <li>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>{{ exam.start_datetime|date:"M d, H:i" }} – {{ exam.end_datetime|date:"M d, H:i" }}</span>
+        </li>
+      </ul>
+
+      <div class="edu-exam-card-action">
+        {% if item.is_open %}
+        <a href="{% url 'examiner:exam_confirm' exam_id=exam.pk %}"
+           class="edu-btn edu-btn-coral edu-btn-block"
+           aria-label="Start exam: {{ exam.title }}">
+          Start Exam →
+        </a>
+        {% else %}
+        <button class="edu-btn edu-btn-outline edu-btn-block" disabled aria-disabled="true"
+                title="{{ item.reason }}">
+          {{ item.reason }}
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="edu-empty edu-empty--center">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <p>No published exams available.</p>
+    <p class="edu-empty-hint">Ask your teacher to publish an exam and try again.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
